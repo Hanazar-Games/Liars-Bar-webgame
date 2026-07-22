@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#090706">
+  <title>骗子酒馆 · Liar's Table</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700;900&family=Special+Elite&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+
+  <main id="game" class="game-shell">
+    <header class="topbar">
+      <button id="menuBtn" class="icon-btn" aria-label="打开菜单">☰</button>
+      <div class="brand"><span>LIAR'S</span><b>TABLE</b></div>
+      <div class="round-info"><span>第 <b id="roundNo">1</b> 局</span><i></i><span>牌堆 <b id="deckCount">0</b></span></div>
+      <button id="soundBtn" class="icon-btn" aria-label="切换声音">♪</button>
+    </header>
+
+    <section class="table-stage" aria-label="游戏牌桌">
+      <div class="ambient-glow"></div>
+      <div id="players" class="players"></div>
+
+      <div class="center-table">
+        <div class="target-plaque">
+          <span>本局指定牌</span>
+          <strong id="targetRank">K</strong>
+          <small id="targetName">国王</small>
+        </div>
+
+        <div id="playedPile" class="played-pile" aria-label="桌面牌堆">
+          <div class="empty-pile">等待出牌</div>
+        </div>
+
+        <div id="turnBanner" class="turn-banner">轮到你了</div>
+      </div>
+
+      <aside id="history" class="history-panel">
+        <div class="history-title">酒馆耳语</div>
+        <div id="historyList" class="history-list" aria-live="polite"></div>
+      </aside>
+
+      <div class="player-area">
+        <div id="hand" class="hand" aria-label="你的手牌"></div>
+        <div id="selectionHint" class="selection-hint">选择 1–3 张牌</div>
+        <div class="actions">
+          <button id="challengeBtn" class="action-btn challenge" disabled>
+            <span class="action-icon">!</span>
+            <span><b>质疑</b><small>你在撒谎</small></span>
+          </button>
+          <button id="playBtn" class="action-btn play" disabled>
+            <span><b>打出 <em id="selectedCount">0</em> 张</b><small id="claimText">宣称是 K</small></span>
+            <span class="action-icon">➜</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section id="startScreen" class="overlay start-screen">
+    <div class="start-vignette"></div>
+    <div class="start-content">
+      <p class="eyebrow">今晚，只有一个人能离席</p>
+      <h1><span>骗子</span>酒馆</h1>
+      <p class="subtitle">LIAR'S TABLE</p>
+      <div class="rule-strip">
+        <span><b>01</b> 暗扣出牌</span><i></i>
+        <span><b>02</b> 真假难辨</span><i></i>
+        <span><b>03</b> 质疑定生死</span>
+      </div>
+      <button id="startBtn" class="primary-btn"><span>入 座</span><small>开始单人对局</small></button>
+      <p class="tip">JOKER 可充当任意指定牌 · 活到最后即获胜</p>
+    </div>
+  </section>
+
+  <section id="revealOverlay" class="overlay reveal-overlay hidden" aria-live="assertive">
+    <div class="reveal-card">
+      <p id="revealEyebrow" class="eyebrow">质疑结果</p>
+      <h2 id="revealTitle">谎言被揭穿</h2>
+      <div id="revealedCards" class="revealed-cards"></div>
+      <p id="revealCopy"></p>
+      <div id="roulette" class="roulette">
+        <div class="revolver"><div class="chamber"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+        <p id="rouletteText">扣动扳机……</p>
+      </div>
+      <button id="continueBtn" class="primary-btn compact hidden">继续</button>
+    </div>
+  </section>
+
+  <section id="endOverlay" class="overlay end-overlay hidden">
+    <div class="end-card">
+      <p class="eyebrow">牌局结束</p>
+      <h2 id="endTitle">你活了下来</h2>
+      <p id="endCopy">酒馆记住了最后的赢家。</p>
+      <button id="restartBtn" class="primary-btn"><span>再来一局</span><small>命运重新洗牌</small></button>
+    </div>
+  </section>
+
+  <section id="menuOverlay" class="overlay menu-overlay hidden">
+    <div class="menu-card">
+      <button id="closeMenuBtn" class="close-btn" aria-label="关闭">×</button>
+      <p class="eyebrow">游戏规则</p>
+      <h2>如何活到最后</h2>
+      <ol>
+        <li><b>出牌</b><span>选择 1–3 张手牌暗扣，并宣称它们都是本局指定牌。</span></li>
+        <li><b>判断</b><span>轮到你时，可以继续出牌，或质疑上一位玩家。</span></li>
+        <li><b>惩罚</b><span>质疑成功，撒谎者扣动左轮；质疑失败，则由质疑者受罚。</span></li>
+        <li><b>胜利</b><span>每轮重新发牌。左轮击发即淘汰，最后存活者获胜。</span></li>
+      </ol>
+      <button id="resumeBtn" class="primary-btn compact">回到牌桌</button>
+    </div>
+  </section>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="game.js"></script>
+</body>
+</html>
