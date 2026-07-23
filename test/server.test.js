@@ -44,6 +44,7 @@ test('creates a private room and broadcasts authoritative redacted state', async
   const address = gameServer.server.address();
   const page = await fetch(`http://127.0.0.1:${address.port}/`);
   assert.equal(page.status, 200);
+  assert.doesNotMatch(page.headers.get('content-security-policy'), /fonts\.(?:googleapis|gstatic)\.com/);
   assert.match(await page.text(), /骗子酒馆/);
   assert.equal((await fetch(`http://127.0.0.1:${address.port}/styles.css`, { method: 'HEAD' })).status, 200);
   assert.equal((await fetch(`http://127.0.0.1:${address.port}/server.js`)).status, 404);
@@ -110,4 +111,33 @@ test('creates a private room and broadcasts authoritative redacted state', async
   const disconnectedHost = afterDisconnect.state.players.find((player) => player.id === hostState.youId);
   assert.equal(disconnectedHost.connected, false);
   assert.equal(disconnectedHost.alive, false);
+});
+
+test('keeps lobby avatars unique when a player is replaced', async (t) => {
+  const gameServer = createGameServer({ host: '127.0.0.1', port: 0, logger: null });
+  await gameServer.start();
+  t.after(() => gameServer.close());
+
+  const url = `ws://127.0.0.1:${gameServer.server.address().port}/ws`;
+  const clients = await Promise.all(Array.from({ length: 4 }, () => connect(url)));
+  t.after(() => clients.forEach(({ socket }) => socket.close()));
+
+  clients[0].send({ type: 'create-room', name: '一号' });
+  const created = await clients[0].next('room');
+  for (let index = 1; index < clients.length; index += 1) {
+    clients[index].send({ type: 'join-room', name: `${index + 1}号`, code: created.room.code });
+    await clients[index].next('room');
+    await clients[0].next('room');
+  }
+
+  clients[1].socket.close();
+  const afterLeave = await clients[0].next('room');
+  assert.equal(afterLeave.room.players.length, 3);
+
+  const replacement = await connect(url);
+  t.after(() => replacement.socket.close());
+  replacement.send({ type: 'join-room', name: '补位', code: created.room.code });
+  const refilled = await replacement.next('room');
+  assert.equal(refilled.room.players.length, 4);
+  assert.equal(new Set(refilled.room.players.map(({ avatar }) => avatar)).size, 4);
 });

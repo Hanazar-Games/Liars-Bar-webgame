@@ -6,9 +6,6 @@
   <meta name="theme-color" content="#090706">
   <meta name="description" content="骗子酒馆：支持单人 AI 与局域网 2–4 人联机的吹牛卡牌游戏。">
   <title>骗子酒馆 · Liar's Table</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700;900&amp;family=Special+Elite&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -98,16 +95,16 @@
       </form>
 
       <p class="tip">JOKER 可充当任意指定牌 · 活到最后即获胜</p>
-      <button id="announcementBtn" class="version-btn" type="button">v1.1.0 · 查看本次更新</button>
+      <button id="announcementBtn" class="version-btn" type="button">v1.1.1 · 查看本次更新</button>
     </div>
   </section>
 
-  <section id="lobbyOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="lobbyTitle" hidden>
+  <section id="lobbyOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="lobbyTitle" aria-describedby="roomHelp lobbyStatus" hidden>
     <div class="panel-card lobby-card">
       <p class="eyebrow">局域网房间</p>
       <h2 id="lobbyTitle">等待酒客入座</h2>
       <button id="lobbyCode" class="room-code" type="button" aria-label="复制房间码">----</button>
-      <p class="room-help">让朋友打开同一个局域网地址并输入房间码</p>
+      <p id="roomHelp" class="room-help">让朋友打开同一个局域网地址并输入房间码</p>
       <div id="lobbyPlayers" class="lobby-players" aria-live="polite"></div>
       <p id="lobbyStatus" class="lobby-status">至少需要 2 名玩家</p>
       <div class="panel-actions">
@@ -117,11 +114,11 @@
     </div>
   </section>
 
-  <section id="revealOverlay" class="overlay" role="alertdialog" aria-modal="true" aria-labelledby="revealTitle" hidden>
+  <section id="revealOverlay" class="overlay" role="alertdialog" aria-modal="true" aria-labelledby="revealTitle" aria-describedby="revealCopy rouletteText" hidden>
     <div class="panel-card reveal-card">
       <p id="revealEyebrow" class="eyebrow">质疑结果</p>
       <h2 id="revealTitle">谎言被揭穿</h2>
-      <div id="revealedCards" class="revealed-cards"></div>
+      <div id="revealedCards" class="revealed-cards" aria-live="polite"></div>
       <p id="revealCopy"></p>
       <div id="roulette" class="roulette">
         <div class="revolver" aria-hidden="true"><div class="chamber"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
@@ -132,7 +129,7 @@
     </div>
   </section>
 
-  <section id="endOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="endTitle" hidden>
+  <section id="endOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="endTitle" aria-describedby="endCopy" hidden>
     <div class="panel-card end-card">
       <p class="eyebrow">牌局结束</p>
       <h2 id="endTitle">你活了下来</h2>
@@ -163,16 +160,18 @@
     <div class="panel-card announcement-card">
       <button id="closeAnnouncementBtn" class="close-btn" type="button" aria-label="关闭更新公告">×</button>
       <p class="eyebrow">更新公告</p>
-      <h2 id="announcementTitle">v1.1.0 · 同桌共饮</h2>
+      <h2 id="announcementTitle">v1.1.1 · 稳住酒桌</h2>
       <p class="release-date">2026-07-23</p>
       <ul>
-        <li>新增 2–4 人局域网房间与服务端权威判定。</li>
-        <li>重构单人和联机共用规则，避免玩法分歧。</li>
-        <li>全面优化移动端布局、弹层焦点、状态反馈和声音体验。</li>
-        <li>修复质疑继续按钮、异步重复回合及隐藏控件可聚焦问题。</li>
+        <li>修复联机失败后操作按钮锁死、重复开局与连接无超时反馈。</li>
+        <li>修复联机推进时规则弹窗叠加、背景错误恢复交互的问题。</li>
+        <li>优化键盘选牌焦点、触屏反馈、窄屏弹层和减少动画体验。</li>
+        <li>平滑 SFX 增益并限制峰值，页面进入后台时自动静音环境音乐。</li>
+        <li>修复玩家补位时可能出现重复头像的问题。</li>
       </ul>
       <details>
         <summary>历史公告</summary>
+        <article><b>v1.1.0 · 同桌共饮</b><time>2026-07-23</time><p>新增 2–4 人局域网房间、权威服务器、断线处理、共用规则引擎与移动端重构。</p></article>
         <article><b>v1.0.0 · 初次开席</b><time>2026-07-22</time><p>推出单人骗子酒馆：三名 AI、质疑裁决与左轮淘汰玩法。</p></article>
       </details>
       <button id="announcementDoneBtn" class="primary-btn compact" type="button">知道了</button>

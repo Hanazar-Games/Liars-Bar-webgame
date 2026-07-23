@@ -60,7 +60,7 @@ export function createGameServer({
         'Content-Type': type,
         'Content-Length': body.length,
         'Cache-Control': path.endsWith('.png') ? 'public, max-age=3600' : 'no-cache',
-        'Content-Security-Policy': "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws: wss:; script-src 'self'",
+        'Content-Security-Policy': "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws: wss:; script-src 'self'",
         'Referrer-Policy': 'no-referrer',
         'X-Content-Type-Options': 'nosniff',
       });
@@ -114,7 +114,8 @@ export function createGameServer({
     if (room.engine) throw new Error('牌局已经开始');
     if (room.members.size >= 4) throw new Error('房间已满');
     const id = randomUUID();
-    const member = { id, name, avatar: AVATARS[room.members.size], socket };
+    const usedAvatars = new Set([...room.members.values()].map(({ avatar }) => avatar));
+    const member = { id, name, avatar: AVATARS.find((avatar) => !usedAvatars.has(avatar)), socket };
     room.members.set(id, member);
     socket.roomCode = room.code;
     socket.playerId = id;
@@ -269,7 +270,7 @@ function lanUrls(port) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const gameServer = createGameServer();
   const address = await gameServer.start();
-  console.log('骗子酒馆 v1.1.0 已启动：');
+  console.log('骗子酒馆 v1.1.1 已启动：');
   lanUrls(address.port).forEach((url) => console.log(`  ${url}`));
 
   const shutdown = async () => {

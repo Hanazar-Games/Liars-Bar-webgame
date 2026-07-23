@@ -23,6 +23,7 @@ const els = {
   endCopy: $('#endCopy'), restart: $('#restartBtn'), endLeave: $('#endLeaveBtn'),
   menu: $('#menuOverlay'), announcement: $('#announcementOverlay'), sound: $('#soundBtn'),
   modeBadge: $('#modeBadge'), youLabel: $('#youLabel'), connectionHint: $('#connectionHint'),
+  createRoom: $('#createRoomBtn'), joinRoom: $('#joinRoomBtn'), backMode: $('#backModeBtn'),
 };
 
 const app = {
@@ -40,6 +41,8 @@ const app = {
   revealSequence: 0,
   aiTimer: null,
   toastTimer: null,
+  connectionTimer: null,
+  connecting: false,
   lastFocus: null,
   announcementReturn: null,
 };
@@ -52,13 +55,22 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const playerName = (id) => app.view?.players.find((player) => player.id === id)?.name || '未知玩家';
 
 let audio;
+let audioBus;
 let ambience;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 function ensureAudio() {
   if (app.muted) return null;
   try {
     audio ||= new (window.AudioContext || window.webkitAudioContext)();
-    if (audio.state === 'suspended') audio.resume();
+    if (!audioBus) {
+      audioBus = audio.createDynamicsCompressor();
+      audioBus.threshold.value = -18;
+      audioBus.knee.value = 12;
+      audioBus.ratio.value = 5;
+      audioBus.connect(audio.destination);
+    }
+    if (audio.state === 'suspended') audio.resume().catch(() => {});
     return audio;
   } catch {
     return null;
@@ -66,17 +78,21 @@ function ensureAudio() {
 }
 
 function tone(freq = 220, duration = .08, type = 'sine', volume = .035) {
+  if (document.hidden) return;
   const context = ensureAudio();
   if (!context) return;
   const oscillator = context.createOscillator();
   const gain = context.createGain();
+  const now = context.currentTime;
   oscillator.type = type;
   oscillator.frequency.value = freq;
-  gain.gain.setValueAtTime(volume, context.currentTime);
-  gain.gain.exponentialRampToValueAtTime(.0001, context.currentTime + duration);
-  oscillator.connect(gain).connect(context.destination);
-  oscillator.start();
-  oscillator.stop(context.currentTime + duration);
+  gain.gain.setValueAtTime(.0001, now);
+  gain.gain.exponentialRampToValueAtTime(volume, now + Math.min(.008, duration / 3));
+  gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
+  oscillator.connect(gain).connect(audioBus);
+  oscillator.addEventListener('ended', () => { oscillator.disconnect(); gain.disconnect(); });
+  oscillator.start(now);
+  oscillator.stop(now + duration + .01);
 }
 
 function startAmbience() {
@@ -95,7 +111,7 @@ function startAmbience() {
   fifth.frequency.value = 82.5;
   low.connect(filter);
   fifth.connect(filter);
-  filter.connect(gain).connect(context.destination);
+  filter.connect(gain).connect(audioBus);
   low.start();
   fifth.start();
   ambience = { gain, low, fifth };
@@ -107,7 +123,7 @@ function setSound(enabled) {
   els.sound.setAttribute('aria-pressed', String(enabled));
   els.sound.setAttribute('aria-label', enabled ? '关闭声音与环境音乐' : '开启声音与环境音乐');
   if (enabled) startAmbience();
-  if (ambience && audio) ambience.gain.gain.setTargetAtTime(enabled ? .006 : 0, audio.currentTime, .08);
+  if (ambience && audio) ambience.gain.gain.setTargetAtTime(enabled && !document.hidden ? .006 : 0, audio.currentTime, .08);
 }
 
 function toast(message) {
@@ -121,10 +137,39 @@ function focusSoon(element) {
   requestAnimationFrame(() => element?.focus());
 }
 
+function syncGameInert() {
+  els.game.inert = [els.start, els.lobby, els.reveal, els.end, els.menu, els.announcement]
+    .some((overlay) => !overlay.hidden);
+}
+
+function setConnecting(connecting) {
+  app.connecting = connecting;
+  [els.createRoom, els.joinRoom, els.playerName, els.roomCodeInput]
+    .forEach((element) => { element.disabled = connecting; });
+}
+
+function clearConnectionTimer() {
+  clearTimeout(app.connectionTimer);
+  app.connectionTimer = null;
+  setConnecting(false);
+}
+
+function abortConnection(socket, message) {
+  if (socket !== app.socket) return;
+  const hadRoom = Boolean(app.room);
+  app.socket = null;
+  app.mode = null;
+  clearConnectionTimer();
+  socket.close();
+  if (hadRoom) returnHome(false);
+  else render();
+  if (message) toast(message);
+}
+
 function showGame() {
   els.start.hidden = true;
   els.lobby.hidden = true;
-  els.game.inert = false;
+  syncGameInert();
 }
 
 function render() {
@@ -181,7 +226,9 @@ function renderHand(me, view) {
       <span class="corner">${rank === 'JOKER' ? '★' : rank}</span><span class="suit">${rank === 'Q' ? '♥' : rank === 'K' ? '♣' : rank === 'A' ? '♠' : '✦'}</span><span class="face">${rank === 'JOKER' ? 'J' : rank}</span>
     </button>`;
   }).join('');
-  els.hand.querySelectorAll('.card').forEach((card) => card.addEventListener('click', () => toggleCard(Number(card.dataset.index))));
+  els.hand.querySelectorAll('.card').forEach((card) => card.addEventListener('click', (event) => {
+    toggleCard(Number(card.dataset.index), event.detail === 0);
+  }));
 }
 
 function renderPile(count) {
@@ -212,12 +259,13 @@ function renderControls(me, view) {
   els.modeBadge.querySelector('span').textContent = app.mode === 'online' ? `联机 · ${app.room?.code || ''}` : app.mode === 'solo' ? '单人牌局' : '未入座';
 }
 
-function toggleCard(index) {
+function toggleCard(index, restoreFocus = false) {
   tone(360, .05, 'triangle');
   if (app.selected.has(index)) app.selected.delete(index);
   else if (app.selected.size < 3) app.selected.add(index);
   else return toast('一次最多打出 3 张牌');
   render();
+  if (restoreFocus) focusSoon(els.hand.querySelector(`[data-index="${index}"]`));
 }
 
 function refreshLocal() {
@@ -288,9 +336,11 @@ function maybeRunAI() {
 
 async function showReveal(result, online) {
   const sequence = ++app.revealSequence;
+  els.menu.hidden = true;
+  app.paused = false;
   app.lastFocus = document.activeElement;
   els.reveal.hidden = false;
-  els.game.inert = true;
+  syncGameInert();
   els.continue.hidden = true;
   els.onlineContinue.hidden = !online;
   els.revealed.innerHTML = '';
@@ -303,14 +353,14 @@ async function showReveal(result, online) {
   focusSoon(els.revealTitle);
   tone(90, .35, 'sawtooth', .04);
 
-  await sleep(320);
+  await sleep(reducedMotion.matches ? 20 : 320);
   if (sequence !== app.revealSequence) return;
   els.revealed.innerHTML = result.cards.map((rank, index) => `<div class="reveal-mini ${rank !== app.view.target && rank !== 'JOKER' ? 'lie' : ''}" style="animation-delay:${index * .14}s">${rank === 'JOKER' ? '★' : rank}</div>`).join('');
-  await sleep(950);
+  await sleep(reducedMotion.matches ? 40 : 950);
   if (sequence !== app.revealSequence) return;
   els.roulette.classList.add('firing');
   tone(70, 1.1, 'sawtooth', .018);
-  await sleep(1250);
+  await sleep(reducedMotion.matches ? 50 : 1250);
   if (sequence !== app.revealSequence) return;
   if (result.bang) {
     els.roulette.classList.add('bang');
@@ -320,7 +370,7 @@ async function showReveal(result, online) {
     els.rouletteText.textContent = `咔哒……空膛。${playerName(result.loser)} 逃过一劫。`;
     tone(180, .08, 'square', .045);
   }
-  await sleep(550);
+  await sleep(reducedMotion.matches ? 30 : 550);
   if (sequence !== app.revealSequence || online) return;
   els.continue.hidden = false;
   focusSoon(els.continue);
@@ -338,7 +388,7 @@ function continueLocal() {
   if (app.mode !== 'solo' || app.engine.phase !== 'reveal') return;
   app.revealSequence += 1;
   els.reveal.hidden = true;
-  els.game.inert = false;
+  syncGameInert();
   app.engine.nextRound();
   app.selected.clear();
   app.busy = false;
@@ -363,9 +413,10 @@ function playSelected() {
     }
     return;
   }
-  sendOnline({ type: 'play', indices });
-  app.busy = true;
-  render();
+  if (sendOnline({ type: 'play', indices })) {
+    app.busy = true;
+    render();
+  }
 }
 
 function challenge() {
@@ -373,9 +424,10 @@ function challenge() {
     localChallenge(app.youId);
     return;
   }
-  sendOnline({ type: 'challenge' });
-  app.busy = true;
-  render();
+  if (sendOnline({ type: 'challenge' })) {
+    app.busy = true;
+    render();
+  }
 }
 
 function openLanPanel() {
@@ -386,6 +438,7 @@ function openLanPanel() {
 }
 
 function connectRoom(action) {
+  if (app.connecting) return;
   const name = els.playerName.value.trim();
   const code = els.roomCodeInput.value.trim().toUpperCase();
   if (!name) return toast('请先输入玩家昵称');
@@ -403,8 +456,10 @@ function connectRoom(action) {
   }
   app.socket = socket;
   app.mode = 'online';
+  setConnecting(true);
   els.connectionHint.textContent = '正在连接…';
   toast('正在连接局域网服务…');
+  app.connectionTimer = setTimeout(() => abortConnection(socket, '连接超时，请确认服务地址后重试'), 8000);
 
   socket.addEventListener('open', () => {
     if (socket !== app.socket) return;
@@ -412,17 +467,27 @@ function connectRoom(action) {
   });
   socket.addEventListener('message', ({ data }) => {
     if (socket !== app.socket) return;
-    handleOnlineMessage(JSON.parse(data));
+    try {
+      handleOnlineMessage(JSON.parse(data), socket);
+    } catch {
+      abortConnection(socket, '服务返回了无法识别的数据');
+    }
   });
   socket.addEventListener('close', () => {
     if (socket !== app.socket) return;
+    const hadRoom = Boolean(app.room);
     app.socket = null;
-    if (app.mode === 'online') {
+    clearConnectionTimer();
+    if (app.mode === 'online' && hadRoom) {
       toast('已与房间断开连接');
       returnHome(false);
+    } else if (app.mode === 'online') {
+      app.mode = null;
+      render();
+      toast('无法连接服务，请确认地址后重试');
     }
   });
-  socket.addEventListener('error', () => toast('无法连接服务，请通过 npm start 打开游戏'));
+  socket.addEventListener('error', () => abortConnection(socket, '无法连接服务，请确认地址后重试'));
 }
 
 function sendOnline(message) {
@@ -430,19 +495,34 @@ function sendOnline(message) {
     app.busy = false;
     render();
     toast('联机连接不可用');
-    return;
+    return false;
   }
-  app.socket.send(JSON.stringify(message));
+  try {
+    app.socket.send(JSON.stringify(message));
+    return true;
+  } catch {
+    app.busy = false;
+    render();
+    toast('发送失败，请检查联机连接');
+    return false;
+  }
 }
 
-function handleOnlineMessage(message) {
+function handleOnlineMessage(message, socket) {
   if (message.type === 'error') {
+    if (!app.room) {
+      abortConnection(socket, message.message);
+      return;
+    }
     app.busy = false;
+    els.restart.disabled = false;
+    if (!els.lobby.hidden) showLobby();
     render();
     toast(message.message);
     return;
   }
   if (message.type === 'room') {
+    clearConnectionTimer();
     app.youId = message.youId;
     app.room = message.room;
     if (!message.room.started) showLobby();
@@ -461,7 +541,7 @@ function handleOnlineMessage(message) {
       app.revealSequence += 1;
       els.reveal.hidden = true;
       els.end.hidden = true;
-      els.game.inert = false;
+      syncGameInert();
       app.busy = false;
     }
     if (message.state.phase === 'ended') {
@@ -485,7 +565,7 @@ function showLobby() {
   const opening = els.lobby.hidden;
   els.start.hidden = true;
   els.lobby.hidden = false;
-  els.game.inert = true;
+  syncGameInert();
   els.lobbyCode.textContent = app.room.code;
   const isHost = app.room.hostId === app.youId;
   const slots = [...app.room.players];
@@ -505,21 +585,24 @@ function showEnd() {
   els.endCopy.textContent = won ? `历经 ${app.view.round} 局，你成为最后仍坐在桌前的人。` : `牌局在第 ${app.view.round} 局落幕。酒馆记住了最后的赢家。`;
   const online = app.mode === 'online';
   const host = online && app.room?.hostId === app.youId;
+  els.menu.hidden = true;
+  app.paused = false;
   els.restart.hidden = online && !host;
+  els.restart.disabled = false;
   els.restart.querySelector('span').textContent = online ? '再开一桌' : '再来一局';
   els.endLeave.hidden = !online;
   els.end.hidden = false;
-  els.game.inert = true;
+  syncGameInert();
   if (opening) focusSoon(host || !online ? els.restart : els.endLeave);
 }
 
 function restartGame() {
   if (app.mode === 'solo') {
     els.end.hidden = true;
-    els.game.inert = false;
+    syncGameInert();
     startSolo();
   } else {
-    sendOnline({ type: 'start-game' });
+    if (sendOnline({ type: 'start-game' })) els.restart.disabled = true;
   }
 }
 
@@ -529,28 +612,31 @@ function openMenu() {
   clearTimeout(app.aiTimer);
   if (app.mode === 'online') toast('联机牌局不会暂停');
   els.menu.hidden = false;
-  els.game.inert = true;
+  syncGameInert();
   focusSoon($('#closeMenuBtn'));
 }
 
 function closeMenu() {
   els.menu.hidden = true;
-  els.game.inert = false;
+  syncGameInert();
   app.paused = false;
   focusSoon(app.lastFocus);
   maybeRunAI();
 }
 
 function openAnnouncement() {
+  if (app.connecting) return toast('请等待联机连接完成后再查看公告');
   app.announcementReturn = !els.start.hidden ? els.start : !els.lobby.hidden ? els.lobby : null;
   if (app.announcementReturn) app.announcementReturn.hidden = true;
   els.announcement.hidden = false;
+  syncGameInert();
   focusSoon($('#closeAnnouncementBtn'));
 }
 
 function closeAnnouncement() {
   els.announcement.hidden = true;
   if (app.announcementReturn) app.announcementReturn.hidden = false;
+  syncGameInert();
   focusSoon($('#announcementBtn'));
   app.announcementReturn = null;
 }
@@ -559,6 +645,7 @@ function returnHome(closeSocket = true) {
   app.session += 1;
   app.revealSequence += 1;
   clearTimeout(app.aiTimer);
+  clearConnectionTimer();
   if (closeSocket && app.socket) {
     const socket = app.socket;
     app.socket = null;
@@ -576,7 +663,7 @@ function returnHome(closeSocket = true) {
   els.start.hidden = false;
   els.modeChooser.hidden = false;
   els.lanPanel.hidden = true;
-  els.game.inert = true;
+  syncGameInert();
   els.modeBadge.className = 'mode-badge';
   els.modeBadge.querySelector('span').textContent = '未入座';
   render();
@@ -588,17 +675,18 @@ els.challenge.addEventListener('click', challenge);
 els.continue.addEventListener('click', continueLocal);
 $('#soloBtn').addEventListener('click', startSolo);
 $('#lanBtn').addEventListener('click', openLanPanel);
-$('#backModeBtn').addEventListener('click', () => {
+els.backMode.addEventListener('click', () => {
+  if (app.socket && !app.room) abortConnection(app.socket);
   els.lanPanel.hidden = true;
   els.modeChooser.hidden = false;
   focusSoon($('#lanBtn'));
 });
-$('#createRoomBtn').addEventListener('click', () => connectRoom('create-room'));
-$('#joinRoomBtn').addEventListener('click', () => connectRoom('join-room'));
+els.createRoom.addEventListener('click', () => connectRoom('create-room'));
+els.joinRoom.addEventListener('click', () => connectRoom('join-room'));
 els.roomCodeInput.addEventListener('input', () => { els.roomCodeInput.value = els.roomCodeInput.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g, ''); });
 els.lanPanel.addEventListener('submit', (event) => {
   event.preventDefault();
-  connectRoom(els.roomCodeInput.value.length === 4 ? 'join-room' : 'create-room');
+  if (!app.connecting) connectRoom(els.roomCodeInput.value.length === 4 ? 'join-room' : 'create-room');
 });
 els.lobbyCode.addEventListener('click', async () => {
   try {
@@ -608,7 +696,12 @@ els.lobbyCode.addEventListener('click', async () => {
     toast(`房间码：${app.room.code}`);
   }
 });
-els.startGame.addEventListener('click', () => sendOnline({ type: 'start-game' }));
+els.startGame.addEventListener('click', () => {
+  if (sendOnline({ type: 'start-game' })) {
+    els.startGame.disabled = true;
+    els.lobbyStatus.textContent = '正在开始牌局…';
+  }
+});
 $('#leaveRoomBtn').addEventListener('click', () => returnHome(true));
 els.endLeave.addEventListener('click', () => returnHome(true));
 els.restart.addEventListener('click', restartGame);
@@ -622,6 +715,9 @@ els.sound.addEventListener('click', () => {
   setSound(app.muted);
   toast(app.muted ? '声音与环境音乐已关闭' : '声音与环境音乐已开启');
   if (!app.muted) tone(440);
+});
+document.addEventListener('visibilitychange', () => {
+  if (ambience && audio) ambience.gain.gain.setTargetAtTime(!document.hidden && !app.muted ? .006 : 0, audio.currentTime, .08);
 });
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
