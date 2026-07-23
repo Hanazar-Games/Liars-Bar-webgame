@@ -4,26 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#090706">
+  <meta name="description" content="骗子酒馆：支持单人 AI 与局域网 2–4 人联机的吹牛卡牌游戏。">
   <title>骗子酒馆 · Liar's Table</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700;900&family=Special+Elite&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700;900&amp;family=Special+Elite&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <a class="skip-link" href="#hand">跳到你的手牌</a>
   <div class="noise" aria-hidden="true"></div>
 
-  <main id="game" class="game-shell">
+  <main id="game" class="game-shell" aria-label="骗子酒馆牌桌">
     <header class="topbar">
-      <button id="menuBtn" class="icon-btn" aria-label="打开菜单">☰</button>
+      <button id="menuBtn" class="icon-btn" type="button" aria-label="打开游戏规则">☰</button>
       <div class="brand"><span>LIAR'S</span><b>TABLE</b></div>
-      <div class="round-info"><span>第 <b id="roundNo">1</b> 局</span><i></i><span>牌堆 <b id="deckCount">0</b></span></div>
-      <button id="soundBtn" class="icon-btn" aria-label="切换声音">♪</button>
+      <div id="modeBadge" class="mode-badge"><i></i><span>未入座</span></div>
+      <div class="round-info"><span>第 <b id="roundNo">0</b> 局</span><i></i><span>牌堆 <b id="deckCount">20</b></span></div>
+      <button id="soundBtn" class="icon-btn" type="button" aria-label="关闭声音与环境音乐" aria-pressed="true">♪</button>
     </header>
 
     <section class="table-stage" aria-label="游戏牌桌">
-      <div class="ambient-glow"></div>
-      <div id="players" class="players"></div>
+      <div class="ambient-glow" aria-hidden="true"></div>
+      <div id="players" class="players" aria-live="polite"></div>
 
       <div class="center-table">
         <div class="target-plaque">
@@ -31,91 +34,152 @@
           <strong id="targetRank">K</strong>
           <small id="targetName">国王</small>
         </div>
-
         <div id="playedPile" class="played-pile" aria-label="桌面牌堆">
           <div class="empty-pile">等待出牌</div>
         </div>
-
-        <div id="turnBanner" class="turn-banner">轮到你了</div>
+        <div id="turnBanner" class="turn-banner" role="status">等待入座</div>
       </div>
 
-      <aside id="history" class="history-panel">
+      <aside class="history-panel" aria-label="本局记录">
         <div class="history-title">酒馆耳语</div>
         <div id="historyList" class="history-list" aria-live="polite"></div>
       </aside>
 
       <div class="player-area">
+        <div class="you-row"><span id="youLabel">你的手牌</span><small id="connectionHint"></small></div>
         <div id="hand" class="hand" aria-label="你的手牌"></div>
-        <div id="selectionHint" class="selection-hint">选择 1–3 张牌</div>
+        <div id="selectionHint" class="selection-hint">入座后开始游戏</div>
         <div class="actions">
-          <button id="challengeBtn" class="action-btn challenge" disabled>
-            <span class="action-icon">!</span>
-            <span><b>质疑</b><small>你在撒谎</small></span>
+          <button id="challengeBtn" class="action-btn challenge" type="button" disabled>
+            <span class="action-icon" aria-hidden="true">!</span>
+            <span><b>质疑</b><small>揭穿上一位玩家</small></span>
           </button>
-          <button id="playBtn" class="action-btn play" disabled>
+          <button id="playBtn" class="action-btn play" type="button" disabled>
             <span><b>打出 <em id="selectedCount">0</em> 张</b><small id="claimText">宣称是 K</small></span>
-            <span class="action-icon">➜</span>
+            <span class="action-icon" aria-hidden="true">➜</span>
           </button>
         </div>
       </div>
     </section>
   </main>
 
-  <section id="startScreen" class="overlay start-screen">
-    <div class="start-vignette"></div>
+  <section id="startScreen" class="overlay start-screen" role="dialog" aria-modal="true" aria-labelledby="startTitle">
+    <div class="start-vignette" aria-hidden="true"></div>
     <div class="start-content">
       <p class="eyebrow">今晚，只有一个人能离席</p>
-      <h1><span>骗子</span>酒馆</h1>
+      <h1 id="startTitle"><span>骗子</span>酒馆</h1>
       <p class="subtitle">LIAR'S TABLE</p>
-      <div class="rule-strip">
-        <span><b>01</b> 暗扣出牌</span><i></i>
-        <span><b>02</b> 真假难辨</span><i></i>
-        <span><b>03</b> 质疑定生死</span>
+      <div id="modeChooser" class="mode-chooser">
+        <button id="soloBtn" class="mode-card primary" type="button">
+          <span class="mode-icon" aria-hidden="true">♠</span>
+          <b>单人牌局</b><small>与三名酒馆老手较量</small>
+        </button>
+        <button id="lanBtn" class="mode-card" type="button">
+          <span class="mode-icon" aria-hidden="true">⌁</span>
+          <b>局域网联机</b><small>2–4 人实时同桌</small>
+        </button>
       </div>
-      <button id="startBtn" class="primary-btn"><span>入 座</span><small>开始单人对局</small></button>
+
+      <form id="lanPanel" class="lan-panel" hidden>
+        <div class="field">
+          <label for="playerName">玩家昵称</label>
+          <input id="playerName" maxlength="12" autocomplete="nickname" placeholder="输入你的称号" required>
+        </div>
+        <div class="lan-actions">
+          <button id="createRoomBtn" class="primary-btn compact" type="button">创建房间</button>
+          <span>或</span>
+          <div class="join-row">
+            <label class="sr-only" for="roomCode">四位房间码</label>
+            <input id="roomCode" class="code-input" maxlength="4" autocomplete="off" placeholder="房间码" inputmode="text">
+            <button id="joinRoomBtn" class="primary-btn compact" type="button">加入</button>
+          </div>
+        </div>
+        <button id="backModeBtn" class="text-btn" type="button">← 返回模式选择</button>
+      </form>
+
       <p class="tip">JOKER 可充当任意指定牌 · 活到最后即获胜</p>
+      <button id="announcementBtn" class="version-btn" type="button">v1.1.0 · 查看本次更新</button>
     </div>
   </section>
 
-  <section id="revealOverlay" class="overlay reveal-overlay hidden" aria-live="assertive">
-    <div class="reveal-card">
+  <section id="lobbyOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="lobbyTitle" hidden>
+    <div class="panel-card lobby-card">
+      <p class="eyebrow">局域网房间</p>
+      <h2 id="lobbyTitle">等待酒客入座</h2>
+      <button id="lobbyCode" class="room-code" type="button" aria-label="复制房间码">----</button>
+      <p class="room-help">让朋友打开同一个局域网地址并输入房间码</p>
+      <div id="lobbyPlayers" class="lobby-players" aria-live="polite"></div>
+      <p id="lobbyStatus" class="lobby-status">至少需要 2 名玩家</p>
+      <div class="panel-actions">
+        <button id="leaveRoomBtn" class="secondary-btn" type="button">离开房间</button>
+        <button id="startGameBtn" class="primary-btn compact" type="button" disabled>开始牌局</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="revealOverlay" class="overlay" role="alertdialog" aria-modal="true" aria-labelledby="revealTitle" hidden>
+    <div class="panel-card reveal-card">
       <p id="revealEyebrow" class="eyebrow">质疑结果</p>
       <h2 id="revealTitle">谎言被揭穿</h2>
       <div id="revealedCards" class="revealed-cards"></div>
       <p id="revealCopy"></p>
       <div id="roulette" class="roulette">
-        <div class="revolver"><div class="chamber"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+        <div class="revolver" aria-hidden="true"><div class="chamber"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
         <p id="rouletteText">扣动扳机……</p>
       </div>
-      <button id="continueBtn" class="primary-btn compact hidden">继续</button>
+      <button id="continueBtn" class="primary-btn compact" type="button" hidden>继续</button>
+      <p id="onlineContinue" class="auto-continue" hidden>下一局即将自动开始…</p>
     </div>
   </section>
 
-  <section id="endOverlay" class="overlay end-overlay hidden">
-    <div class="end-card">
+  <section id="endOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="endTitle" hidden>
+    <div class="panel-card end-card">
       <p class="eyebrow">牌局结束</p>
       <h2 id="endTitle">你活了下来</h2>
       <p id="endCopy">酒馆记住了最后的赢家。</p>
-      <button id="restartBtn" class="primary-btn"><span>再来一局</span><small>命运重新洗牌</small></button>
+      <div class="panel-actions">
+        <button id="endLeaveBtn" class="secondary-btn" type="button" hidden>返回首页</button>
+        <button id="restartBtn" class="primary-btn" type="button"><span>再来一局</span><small>命运重新洗牌</small></button>
+      </div>
     </div>
   </section>
 
-  <section id="menuOverlay" class="overlay menu-overlay hidden">
-    <div class="menu-card">
-      <button id="closeMenuBtn" class="close-btn" aria-label="关闭">×</button>
+  <section id="menuOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="rulesTitle" hidden>
+    <div class="panel-card menu-card">
+      <button id="closeMenuBtn" class="close-btn" type="button" aria-label="关闭游戏规则">×</button>
       <p class="eyebrow">游戏规则</p>
-      <h2>如何活到最后</h2>
+      <h2 id="rulesTitle">如何活到最后</h2>
       <ol>
         <li><b>出牌</b><span>选择 1–3 张手牌暗扣，并宣称它们都是本局指定牌。</span></li>
         <li><b>判断</b><span>轮到你时，可以继续出牌，或质疑上一位玩家。</span></li>
         <li><b>惩罚</b><span>质疑成功，撒谎者扣动左轮；质疑失败，则由质疑者受罚。</span></li>
-        <li><b>胜利</b><span>每轮重新发牌。左轮击发即淘汰，最后存活者获胜。</span></li>
+        <li><b>胜利</b><span>每局重新发牌。左轮击发即淘汰，最后存活者获胜。</span></li>
       </ol>
-      <button id="resumeBtn" class="primary-btn compact">回到牌桌</button>
+      <button id="resumeBtn" class="primary-btn compact" type="button">回到牌桌</button>
     </div>
   </section>
 
-  <div id="toast" class="toast" role="status"></div>
-  <script src="game.js"></script>
+  <section id="announcementOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="announcementTitle" hidden>
+    <div class="panel-card announcement-card">
+      <button id="closeAnnouncementBtn" class="close-btn" type="button" aria-label="关闭更新公告">×</button>
+      <p class="eyebrow">更新公告</p>
+      <h2 id="announcementTitle">v1.1.0 · 同桌共饮</h2>
+      <p class="release-date">2026-07-23</p>
+      <ul>
+        <li>新增 2–4 人局域网房间与服务端权威判定。</li>
+        <li>重构单人和联机共用规则，避免玩法分歧。</li>
+        <li>全面优化移动端布局、弹层焦点、状态反馈和声音体验。</li>
+        <li>修复质疑继续按钮、异步重复回合及隐藏控件可聚焦问题。</li>
+      </ul>
+      <details>
+        <summary>历史公告</summary>
+        <article><b>v1.0.0 · 初次开席</b><time>2026-07-22</time><p>推出单人骗子酒馆：三名 AI、质疑裁决与左轮淘汰玩法。</p></article>
+      </details>
+      <button id="announcementDoneBtn" class="primary-btn compact" type="button">知道了</button>
+    </div>
+  </section>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="game.js"></script>
 </body>
 </html>
