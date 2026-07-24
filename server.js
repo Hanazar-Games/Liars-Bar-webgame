@@ -72,6 +72,7 @@ export function createGameServer({
   });
 
   const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 16 * 1024 });
+  wss.on('error', (error) => { if (server.listening) logger?.error(error); });
 
   function roomView(room) {
     return {
@@ -269,14 +270,20 @@ function lanUrls(port) {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const gameServer = createGameServer();
-  const address = await gameServer.start();
-  console.log('骗子酒馆 v1.1.1 已启动：');
-  lanUrls(address.port).forEach((url) => console.log(`  ${url}`));
+  try {
+    const address = await gameServer.start();
+    console.log('骗子酒馆 v1.2.0 已启动：');
+    lanUrls(address.port).forEach((url) => console.log(`  ${url}`));
 
-  const shutdown = async () => {
-    await gameServer.close();
-    process.exit(0);
-  };
-  process.once('SIGINT', shutdown);
-  process.once('SIGTERM', shutdown);
+    const shutdown = async () => {
+      await gameServer.close();
+      process.exit(0);
+    };
+    process.once('SIGINT', shutdown);
+    process.once('SIGTERM', shutdown);
+  } catch (error) {
+    const port = Number(process.env.PORT) || 4173;
+    console.error(error.code === 'EADDRINUSE' ? `启动失败：端口 ${port} 已被占用，请设置其他 PORT 后重试。` : `启动失败：${error.message}`);
+    process.exitCode = 1;
+  }
 }

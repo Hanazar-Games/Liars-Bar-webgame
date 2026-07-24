@@ -34,7 +34,8 @@
         <div id="playedPile" class="played-pile" aria-label="桌面牌堆">
           <div class="empty-pile">等待出牌</div>
         </div>
-        <div id="turnBanner" class="turn-banner" role="status">等待入座</div>
+        <div id="lastClaim" class="last-claim" aria-live="polite">尚无出牌</div>
+        <div id="turnBanner" class="turn-banner" role="status" aria-live="polite" aria-atomic="true">等待入座</div>
       </div>
 
       <aside class="history-panel" aria-label="本局记录">
@@ -49,7 +50,7 @@
         <div class="actions">
           <button id="challengeBtn" class="action-btn challenge" type="button" disabled>
             <span class="action-icon" aria-hidden="true">!</span>
-            <span><b>质疑</b><small>揭穿上一位玩家</small></span>
+            <span><b>质疑</b><small id="challengeText">尚无可质疑出牌</small></span>
           </button>
           <button id="playBtn" class="action-btn play" type="button" disabled>
             <span><b>打出 <em id="selectedCount">0</em> 张</b><small id="claimText">宣称是 K</small></span>
@@ -95,7 +96,7 @@
       </form>
 
       <p class="tip">JOKER 可充当任意指定牌 · 活到最后即获胜</p>
-      <button id="announcementBtn" class="version-btn" type="button">v1.1.1 · 查看本次更新</button>
+      <button id="announcementBtn" class="version-btn" type="button">v1.2.0 · 查看本次更新</button>
     </div>
   </section>
 
@@ -160,17 +161,19 @@
     <div class="panel-card announcement-card">
       <button id="closeAnnouncementBtn" class="close-btn" type="button" aria-label="关闭更新公告">×</button>
       <p class="eyebrow">更新公告</p>
-      <h2 id="announcementTitle">v1.1.1 · 稳住酒桌</h2>
-      <p class="release-date">2026-07-23</p>
+      <h2 id="announcementTitle">v1.2.0 · 沉浸酒桌</h2>
+      <p class="release-date">2026-07-24</p>
       <ul>
-        <li>修复联机失败后操作按钮锁死、重复开局与连接无超时反馈。</li>
-        <li>修复联机推进时规则弹窗叠加、背景错误恢复交互的问题。</li>
-        <li>优化键盘选牌焦点、触屏反馈、窄屏弹层和减少动画体验。</li>
-        <li>平滑 SFX 增益并限制峰值，页面进入后台时自动静音环境音乐。</li>
-        <li>修复玩家补位时可能出现重复头像的问题。</li>
+        <li>新增上一手宣称提示，质疑按钮会明确显示玩家与牌数。</li>
+        <li>区分 AI 与真人回合文案，并强化当前玩家、出牌状态和触屏反馈。</li>
+        <li>重制选牌、落牌、质疑、转轮与击发音效，减少单调蜂鸣感。</li>
+        <li>升级程序化环境音乐，加入柔和和弦起伏与壁炉底噪。</li>
+        <li>提高移动端文字可读性，修正窄屏按钮、牌桌层级和弹层滚动体验。</li>
+        <li>修复端口占用时重复抛出 WebSocket 错误堆栈的问题。</li>
       </ul>
       <details>
         <summary>历史公告</summary>
+        <article><b>v1.1.1 · 稳住酒桌</b><time>2026-07-23</time><p>修复联机状态锁死、弹层焦点与重复头像，并优化触屏、窄屏和音频峰值。</p></article>
         <article><b>v1.1.0 · 同桌共饮</b><time>2026-07-23</time><p>新增 2–4 人局域网房间、权威服务器、断线处理、共用规则引擎与移动端重构。</p></article>
         <article><b>v1.0.0 · 初次开席</b><time>2026-07-22</time><p>推出单人骗子酒馆：三名 AI、质疑裁决与左轮淘汰玩法。</p></article>
       </details>

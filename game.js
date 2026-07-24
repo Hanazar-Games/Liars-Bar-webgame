@@ -10,8 +10,9 @@ const AI_PLAYERS = [
 const els = {
   game: $('#game'), players: $('#players'), hand: $('#hand'), targetRank: $('#targetRank'),
   targetName: $('#targetName'), roundNo: $('#roundNo'), deckCount: $('#deckCount'),
-  pile: $('#playedPile'), turnBanner: $('#turnBanner'), selectedCount: $('#selectedCount'),
-  selectionHint: $('#selectionHint'), claimText: $('#claimText'), play: $('#playBtn'),
+  pile: $('#playedPile'), lastClaim: $('#lastClaim'), turnBanner: $('#turnBanner'),
+  selectedCount: $('#selectedCount'), selectionHint: $('#selectionHint'),
+  claimText: $('#claimText'), challengeText: $('#challengeText'), play: $('#playBtn'),
   challenge: $('#challengeBtn'), history: $('#historyList'), toast: $('#toast'),
   start: $('#startScreen'), modeChooser: $('#modeChooser'), lanPanel: $('#lanPanel'),
   playerName: $('#playerName'), roomCodeInput: $('#roomCode'), lobby: $('#lobbyOverlay'),
@@ -57,6 +58,7 @@ const playerName = (id) => app.view?.players.find((player) => player.id === id)?
 let audio;
 let audioBus;
 let ambience;
+const AMBIENCE_VOLUME = .005;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 function ensureAudio() {
@@ -77,13 +79,13 @@ function ensureAudio() {
   }
 }
 
-function tone(freq = 220, duration = .08, type = 'sine', volume = .035) {
+function tone(freq = 220, duration = .08, type = 'sine', volume = .035, delay = 0) {
   if (document.hidden) return;
   const context = ensureAudio();
   if (!context) return;
   const oscillator = context.createOscillator();
   const gain = context.createGain();
-  const now = context.currentTime;
+  const now = context.currentTime + delay;
   oscillator.type = type;
   oscillator.frequency.value = freq;
   gain.gain.setValueAtTime(.0001, now);
@@ -95,26 +97,81 @@ function tone(freq = 220, duration = .08, type = 'sine', volume = .035) {
   oscillator.stop(now + duration + .01);
 }
 
+function noiseBurst(duration = .06, volume = .02, frequency = 1200, delay = 0) {
+  if (document.hidden) return;
+  const context = ensureAudio();
+  if (!context) return;
+  const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let index = 0; index < data.length; index += 1) data[index] = Math.random() * 2 - 1;
+  const source = context.createBufferSource();
+  const filter = context.createBiquadFilter();
+  const gain = context.createGain();
+  const now = context.currentTime + delay;
+  source.buffer = buffer;
+  filter.type = 'lowpass';
+  filter.frequency.value = frequency;
+  gain.gain.setValueAtTime(.0001, now);
+  gain.gain.exponentialRampToValueAtTime(volume, now + Math.min(.006, duration / 3));
+  gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
+  source.connect(filter).connect(gain).connect(audioBus);
+  source.addEventListener('ended', () => { source.disconnect(); filter.disconnect(); gain.disconnect(); });
+  source.start(now);
+}
+
+function soundCue(name) {
+  if (name === 'select') tone(420, .045, 'triangle', .022);
+  if (name === 'play') { noiseBurst(.07, .028, 850); tone(115, .09, 'triangle', .02); }
+  if (name === 'challenge') { tone(155, .13, 'sawtooth', .028); tone(82, .2, 'sawtooth', .022, .09); }
+  if (name === 'spin') { noiseBurst(.5, .012, 500); tone(64, .7, 'sawtooth', .012); }
+  if (name === 'bang') { noiseBurst(.45, .11, 420); tone(42, .7, 'square', .085); }
+  if (name === 'empty') { noiseBurst(.035, .026, 2400); tone(210, .06, 'triangle', .025); }
+  if (name === 'ready') { tone(440, .07, 'sine', .025); tone(660, .09, 'sine', .018, .06); }
+}
+
 function startAmbience() {
   const context = ensureAudio();
   if (!context || ambience) return;
   const gain = context.createGain();
   const filter = context.createBiquadFilter();
-  const low = context.createOscillator();
-  const fifth = context.createOscillator();
-  gain.gain.value = app.muted ? 0 : .006;
+  const mix = context.createGain();
+  const oscillators = [55, 82.5, 110].map((frequency, index) => {
+    const oscillator = context.createOscillator();
+    oscillator.type = index === 1 ? 'triangle' : 'sine';
+    oscillator.frequency.value = frequency;
+    oscillator.connect(mix);
+    oscillator.start();
+    return oscillator;
+  });
+  const noiseBuffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+  const noiseData = noiseBuffer.getChannelData(0);
+  for (let index = 0; index < noiseData.length; index += 1) {
+    noiseData[index] = Math.random() < .00045 ? (Math.random() * 2 - 1) * .8 : (Math.random() * 2 - 1) * .025;
+  }
+  const fire = context.createBufferSource();
+  const fireFilter = context.createBiquadFilter();
+  const fireGain = context.createGain();
+  const lfo = context.createOscillator();
+  const lfoGain = context.createGain();
+  gain.gain.value = app.muted ? 0 : AMBIENCE_VOLUME;
+  mix.gain.value = .62;
   filter.type = 'lowpass';
-  filter.frequency.value = 240;
-  low.type = 'sine';
-  fifth.type = 'triangle';
-  low.frequency.value = 55;
-  fifth.frequency.value = 82.5;
-  low.connect(filter);
-  fifth.connect(filter);
+  filter.frequency.value = 260;
+  fire.buffer = noiseBuffer;
+  fire.loop = true;
+  fireFilter.type = 'bandpass';
+  fireFilter.frequency.value = 620;
+  fireFilter.Q.value = .7;
+  fireGain.gain.value = .12;
+  lfo.frequency.value = .075;
+  lfoGain.gain.value = .08;
+  mix.connect(filter);
   filter.connect(gain).connect(audioBus);
-  low.start();
-  fifth.start();
-  ambience = { gain, low, fifth };
+  fire.connect(fireFilter).connect(fireGain).connect(gain);
+  lfo.connect(lfoGain).connect(mix.gain);
+  fire.start();
+  lfo.start();
+  ambience = { gain, oscillators, fire, lfo };
 }
 
 function setSound(enabled) {
@@ -123,7 +180,7 @@ function setSound(enabled) {
   els.sound.setAttribute('aria-pressed', String(enabled));
   els.sound.setAttribute('aria-label', enabled ? '关闭声音与环境音乐' : '开启声音与环境音乐');
   if (enabled) startAmbience();
-  if (ambience && audio) ambience.gain.gain.setTargetAtTime(enabled && !document.hidden ? .006 : 0, audio.currentTime, .08);
+  if (ambience && audio) ambience.gain.gain.setTargetAtTime(enabled && !document.hidden ? AMBIENCE_VOLUME : 0, audio.currentTime, .08);
 }
 
 function toast(message) {
@@ -179,6 +236,10 @@ function render() {
     els.hand.innerHTML = '';
     els.history.innerHTML = '';
     els.turnBanner.textContent = '等待入座';
+    els.turnBanner.classList.remove('your-turn');
+    els.lastClaim.textContent = '尚无出牌';
+    els.lastClaim.classList.remove('active');
+    els.challengeText.textContent = '尚无可质疑出牌';
     els.selectionHint.textContent = '入座后开始游戏';
     els.play.disabled = true;
     els.challenge.disabled = true;
@@ -249,21 +310,31 @@ function renderHistory(history = []) {
 
 function renderControls(me, view) {
   const myTurn = Boolean(me?.alive && view.current === app.youId && view.phase === 'playing' && !app.busy && !app.paused);
+  const previous = view.lastPlay ? view.players.find((player) => player.id === view.lastPlay.player) : null;
   els.selectedCount.textContent = app.selected.size;
-  els.selectionHint.textContent = app.selected.size ? `已选择 ${app.selected.size} 张 · 将宣称为 ${view.target}` : myTurn ? '选择 1–3 张牌' : me?.alive ? '等待轮到你' : '你已离席，正在旁观';
+  const claimMessage = previous ? `${previous.name} 宣称打出 ${view.lastPlay.count} 张 ${view.target}` : '尚无出牌';
+  if (els.lastClaim.textContent !== claimMessage) els.lastClaim.textContent = claimMessage;
+  els.lastClaim.classList.toggle('active', Boolean(previous));
+  els.challengeText.textContent = previous ? `揭穿 ${previous.name} 的 ${view.lastPlay.count} 张牌` : '尚无可质疑出牌';
+  els.selectionHint.textContent = app.selected.size
+    ? `已选择 ${app.selected.size} 张 · 将宣称为 ${view.target}`
+    : myTurn ? view.lastPlay ? '继续出牌，或质疑上一手' : '选择 1–3 张牌' : me?.alive ? '等待轮到你' : '你已离席，正在旁观';
   els.play.disabled = !myTurn || app.selected.size < 1 || app.selected.size > 3;
   els.challenge.disabled = !myTurn || !view.lastPlay;
   const current = view.players.find((player) => player.id === view.current);
-  els.turnBanner.textContent = view.phase === 'reveal' ? '等待裁决…' : view.phase === 'ended' ? '牌局结束' : myTurn ? '轮到你了' : `${current?.name || ''} 正在思考…`;
+  const waiting = current?.bot ? `${current.name} 正在盘算…` : `等待 ${current?.name || '玩家'} 出牌`;
+  const turnMessage = view.phase === 'reveal' ? '等待裁决…' : view.phase === 'ended' ? '牌局结束' : myTurn ? '轮到你了' : waiting;
+  if (els.turnBanner.textContent !== turnMessage) els.turnBanner.textContent = turnMessage;
+  els.turnBanner.classList.toggle('your-turn', myTurn);
   els.modeBadge.className = `mode-badge ${app.mode || ''}`;
   els.modeBadge.querySelector('span').textContent = app.mode === 'online' ? `联机 · ${app.room?.code || ''}` : app.mode === 'solo' ? '单人牌局' : '未入座';
 }
 
 function toggleCard(index, restoreFocus = false) {
-  tone(360, .05, 'triangle');
   if (app.selected.has(index)) app.selected.delete(index);
   else if (app.selected.size < 3) app.selected.add(index);
   else return toast('一次最多打出 3 张牌');
+  soundCue('select');
   render();
   if (restoreFocus) focusSoon(els.hand.querySelector(`[data-index="${index}"]`));
 }
@@ -328,7 +399,7 @@ function maybeRunAI() {
       return;
     }
     app.engine.play(currentId, chooseAI(app.engine, currentId));
-    tone(150, .12, 'square', .025);
+    soundCue('play');
     refreshLocal();
     maybeRunAI();
   }, 300);
@@ -351,7 +422,7 @@ async function showReveal(result, online) {
   els.rouletteText.textContent = `${playerName(result.loser)} 必须扣动扳机……`;
   els.revealTitle.tabIndex = -1;
   focusSoon(els.revealTitle);
-  tone(90, .35, 'sawtooth', .04);
+  soundCue('challenge');
 
   await sleep(reducedMotion.matches ? 20 : 320);
   if (sequence !== app.revealSequence) return;
@@ -359,16 +430,16 @@ async function showReveal(result, online) {
   await sleep(reducedMotion.matches ? 40 : 950);
   if (sequence !== app.revealSequence) return;
   els.roulette.classList.add('firing');
-  tone(70, 1.1, 'sawtooth', .018);
+  soundCue('spin');
   await sleep(reducedMotion.matches ? 50 : 1250);
   if (sequence !== app.revealSequence) return;
   if (result.bang) {
     els.roulette.classList.add('bang');
     els.rouletteText.textContent = `砰！${playerName(result.loser)} 被淘汰了。`;
-    tone(48, .6, 'square', .12);
+    soundCue('bang');
   } else {
     els.rouletteText.textContent = `咔哒……空膛。${playerName(result.loser)} 逃过一劫。`;
-    tone(180, .08, 'square', .045);
+    soundCue('empty');
   }
   await sleep(reducedMotion.matches ? 30 : 550);
   if (sequence !== app.revealSequence || online) return;
@@ -405,7 +476,7 @@ function playSelected() {
     try {
       app.engine.play(app.youId, indices);
       app.selected.clear();
-      tone(150, .12, 'square', .025);
+      soundCue('play');
       refreshLocal();
       maybeRunAI();
     } catch (error) {
@@ -415,6 +486,7 @@ function playSelected() {
   }
   if (sendOnline({ type: 'play', indices })) {
     app.busy = true;
+    soundCue('play');
     render();
   }
 }
@@ -714,10 +786,10 @@ $('#announcementDoneBtn').addEventListener('click', closeAnnouncement);
 els.sound.addEventListener('click', () => {
   setSound(app.muted);
   toast(app.muted ? '声音与环境音乐已关闭' : '声音与环境音乐已开启');
-  if (!app.muted) tone(440);
+  if (!app.muted) soundCue('ready');
 });
 document.addEventListener('visibilitychange', () => {
-  if (ambience && audio) ambience.gain.gain.setTargetAtTime(!document.hidden && !app.muted ? .006 : 0, audio.currentTime, .08);
+  if (ambience && audio) ambience.gain.gain.setTargetAtTime(!document.hidden && !app.muted ? AMBIENCE_VOLUME : 0, audio.currentTime, .08);
 });
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {

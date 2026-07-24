@@ -25,11 +25,15 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(html, /<script type="module" src="game\.js"><\/script>/);
   assert.doesNotMatch(html, /https:\/\/fonts\.(?:googleapis|gstatic)\.com/);
   assert.match(styles, /\[hidden\]\s*\{\s*display:\s*none\s*!important/);
-  assert.match(html, /v1\.1\.1/);
+  assert.match(html, /id="lastClaim"[^>]+aria-live="polite"/);
+  assert.match(html, /id="challengeText"/);
+  assert.match(script, /lfo\.connect\(lfoGain\)\.connect\(mix\.gain\)/);
+  assert.match(html, /v1\.2\.0/);
   const { version } = JSON.parse(manifest);
-  assert.equal(version, '1.1.1');
+  assert.equal(version, '1.2.0');
   assert.match(server, new RegExp(`v${version.replaceAll('.', '\\.')}`));
   assert.match(changelog, /v1\.1\.1/);
+  assert.match(changelog, /v1\.2\.0/);
   assert.match(changelog, /v1\.1\.0/);
   assert.match(changelog, /v1\.0\.0/);
 });

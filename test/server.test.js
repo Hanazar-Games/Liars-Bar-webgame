@@ -141,3 +141,16 @@ test('keeps lobby avatars unique when a player is replaced', async (t) => {
   assert.equal(refilled.room.players.length, 4);
   assert.equal(new Set(refilled.room.players.map(({ avatar }) => avatar)).size, 4);
 });
+
+test('rejects an occupied port without an unhandled WebSocket error', async (t) => {
+  const first = createGameServer({ host: '127.0.0.1', port: 0, logger: null });
+  await first.start();
+  t.after(() => first.close());
+
+  const second = createGameServer({
+    host: '127.0.0.1',
+    port: first.server.address().port,
+    logger: null,
+  });
+  await assert.rejects(second.start(), { code: 'EADDRINUSE' });
+});
