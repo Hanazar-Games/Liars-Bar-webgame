@@ -176,7 +176,7 @@ function startAmbience() {
 
 function setSound(enabled) {
   app.muted = !enabled;
-  els.sound.textContent = enabled ? '♪' : '♩';
+  els.sound.querySelector('use').setAttribute('href', enabled ? '#icon-volume-on' : '#icon-volume-off');
   els.sound.setAttribute('aria-pressed', String(enabled));
   els.sound.setAttribute('aria-label', enabled ? '关闭声音与环境音乐' : '开启声音与环境音乐');
   if (enabled) startAmbience();
@@ -297,9 +297,10 @@ function renderPile(count) {
     els.pile.innerHTML = '<div class="empty-pile">等待出牌</div>';
     return;
   }
-  els.pile.innerHTML = Array.from({ length: Math.min(count, 9) }, (_, index, cards) => {
+  const visibleCount = Math.min(count, 9);
+  els.pile.innerHTML = Array.from({ length: visibleCount }, (_, index) => {
     const rotation = (index * 23 % 34) - 17;
-    const offset = (index - (cards.length - 1) / 2) * 5;
+    const offset = (index - (visibleCount - 1) / 2) * 5;
     return `<i class="pile-card" style="transform:translateX(${offset}px) rotate(${rotation}deg)"></i>`;
   }).join('');
 }
@@ -417,8 +418,8 @@ async function showReveal(result, online) {
   els.revealed.innerHTML = '';
   els.roulette.className = 'roulette';
   els.revealTitle.textContent = result.lied ? '谎言被揭穿' : '质疑失败';
-  els.revealEyebrow.textContent = `${playerName(result.challenger)} 发起质疑`;
-  els.revealCopy.textContent = result.lied ? `${playerName(result.accused)} 的牌中混入了假牌。` : `所有牌都能充当 ${app.view.target}，${playerName(result.challenger)} 判断错了。`;
+  els.revealEyebrow.textContent = `${playerName(result.challenger)}发起质疑`;
+  els.revealCopy.textContent = result.lied ? `${playerName(result.accused)}的牌中混入了假牌。` : `所有牌都能充当 ${app.view.target}，${playerName(result.challenger)}判断错了。`;
   els.rouletteText.textContent = `${playerName(result.loser)} 必须扣动扳机……`;
   els.revealTitle.tabIndex = -1;
   focusSoon(els.revealTitle);

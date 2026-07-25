@@ -27,6 +27,17 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(styles, /\[hidden\]\s*\{\s*display:\s*none\s*!important/);
   assert.match(html, /id="lastClaim"[^>]+aria-live="polite"/);
   assert.match(html, /id="challengeText"/);
+  assert.doesNotMatch(script, /\(_, index, cards\)/);
+  assert.doesNotMatch(script, /\$\{playerName\([^)]*\)\} 的牌/);
+  assert.match(html, /<symbol id="icon-menu"/);
+  assert.match(html, /<symbol id="icon-volume-on"/);
+  assert.match(html, /<symbol id="icon-network"/);
+  assert.doesNotMatch(html, /id="menuBtn"[^>]*>☰<\/button>/);
+  assert.match(styles, /orientation:\s*landscape[\s\S]*grid-template-columns:\s*minmax\(0,1fr\) 330px/);
+  assert.match(styles, /orientation:\s*landscape[\s\S]*\.mode-badge\s*\{[^}]*position:\s*static/);
+  assert.match(styles, /orientation:\s*landscape[\s\S]*\.lan-panel\s*\{[^}]*grid-template-columns:/);
+  assert.match(styles, /orientation:\s*landscape[\s\S]*\.lobby-players\s*\{[^}]*grid-template-columns:\s*repeat\(2,1fr\)/);
+  assert.match(styles, /orientation:\s*landscape[\s\S]*\.panel-actions\s*\{[^}]*flex-direction:\s*row/);
   assert.match(script, /lfo\.connect\(lfoGain\)\.connect\(mix\.gain\)/);
   assert.match(html, /v1\.2\.0/);
   const { version } = JSON.parse(manifest);

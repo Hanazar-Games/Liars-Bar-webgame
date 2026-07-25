@@ -11,14 +11,27 @@
 <body>
   <a class="skip-link" href="#hand">跳到你的手牌</a>
   <div class="noise" aria-hidden="true"></div>
+  <svg class="icon-sprite" aria-hidden="true">
+    <defs>
+      <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+      <symbol id="icon-volume-on" viewBox="0 0 24 24"><path d="M5 10v4h4l5 4V6L9 10H5Z"/><path d="M17 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></symbol>
+      <symbol id="icon-volume-off" viewBox="0 0 24 24"><path d="M5 10v4h4l5 4V6L9 10H5Z"/><path d="m17 10 4 4m0-4-4 4"/></symbol>
+      <symbol id="icon-cards" viewBox="0 0 24 24"><rect x="7" y="4" width="11" height="16" rx="2"/><path d="m7 7-2 .5a2 2 0 0 0-1.5 2.4l2 8a2 2 0 0 0 2.4 1.5M10 8h5m-5 4h5"/></symbol>
+      <symbol id="icon-network" viewBox="0 0 24 24"><circle cx="12" cy="6" r="2"/><circle cx="6" cy="17" r="2"/><circle cx="18" cy="17" r="2"/><path d="m10.8 7.7-3.6 7.5m6-7.5 3.6 7.5M8 17h8"/></symbol>
+      <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6Z"/><circle cx="12" cy="12" r="2.5"/></symbol>
+      <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+      <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5m5-5-5 5 5 5"/></symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    </defs>
+  </svg>
 
   <main id="game" class="game-shell" aria-label="骗子酒馆牌桌">
     <header class="topbar">
-      <button id="menuBtn" class="icon-btn" type="button" aria-label="打开游戏规则">☰</button>
+      <button id="menuBtn" class="icon-btn" type="button" aria-label="打开游戏规则"><svg class="ui-icon" aria-hidden="true"><use href="#icon-menu"></use></svg></button>
       <div class="brand"><span>LIAR'S</span><b>TABLE</b></div>
       <div id="modeBadge" class="mode-badge"><i></i><span>未入座</span></div>
       <div class="round-info"><span>第 <b id="roundNo">0</b> 局</span><i></i><span>牌堆 <b id="deckCount">20</b></span></div>
-      <button id="soundBtn" class="icon-btn" type="button" aria-label="关闭声音与环境音乐" aria-pressed="true">♪</button>
+      <button id="soundBtn" class="icon-btn" type="button" aria-label="关闭声音与环境音乐" aria-pressed="true"><svg class="ui-icon" aria-hidden="true"><use href="#icon-volume-on"></use></svg></button>
     </header>
 
     <section class="table-stage" aria-label="游戏牌桌">
@@ -49,12 +62,12 @@
         <div id="selectionHint" class="selection-hint">入座后开始游戏</div>
         <div class="actions">
           <button id="challengeBtn" class="action-btn challenge" type="button" disabled>
-            <span class="action-icon" aria-hidden="true">!</span>
+            <span class="action-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-eye"></use></svg></span>
             <span><b>质疑</b><small id="challengeText">尚无可质疑出牌</small></span>
           </button>
           <button id="playBtn" class="action-btn play" type="button" disabled>
             <span><b>打出 <em id="selectedCount">0</em> 张</b><small id="claimText">宣称是 K</small></span>
-            <span class="action-icon" aria-hidden="true">➜</span>
+            <span class="action-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-arrow-right"></use></svg></span>
           </button>
         </div>
       </div>
@@ -69,11 +82,11 @@
       <p class="subtitle">LIAR'S TABLE</p>
       <div id="modeChooser" class="mode-chooser">
         <button id="soloBtn" class="mode-card primary" type="button">
-          <span class="mode-icon" aria-hidden="true">♠</span>
+          <span class="mode-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-cards"></use></svg></span>
           <b>单人牌局</b><small>与三名酒馆老手较量</small>
         </button>
         <button id="lanBtn" class="mode-card" type="button">
-          <span class="mode-icon" aria-hidden="true">⌁</span>
+          <span class="mode-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-network"></use></svg></span>
           <b>局域网联机</b><small>2–4 人实时同桌</small>
         </button>
       </div>
@@ -92,7 +105,7 @@
             <button id="joinRoomBtn" class="primary-btn compact" type="button">加入</button>
           </div>
         </div>
-        <button id="backModeBtn" class="text-btn" type="button">← 返回模式选择</button>
+        <button id="backModeBtn" class="text-btn" type="button"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-left"></use></svg>返回模式选择</button>
       </form>
 
       <p class="tip">JOKER 可充当任意指定牌 · 活到最后即获胜</p>
@@ -144,7 +157,7 @@
 
   <section id="menuOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="rulesTitle" hidden>
     <div class="panel-card menu-card">
-      <button id="closeMenuBtn" class="close-btn" type="button" aria-label="关闭游戏规则">×</button>
+      <button id="closeMenuBtn" class="close-btn" type="button" aria-label="关闭游戏规则"><svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
       <p class="eyebrow">游戏规则</p>
       <h2 id="rulesTitle">如何活到最后</h2>
       <ol>
@@ -159,7 +172,7 @@
 
   <section id="announcementOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="announcementTitle" hidden>
     <div class="panel-card announcement-card">
-      <button id="closeAnnouncementBtn" class="close-btn" type="button" aria-label="关闭更新公告">×</button>
+      <button id="closeAnnouncementBtn" class="close-btn" type="button" aria-label="关闭更新公告"><svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
       <p class="eyebrow">更新公告</p>
       <h2 id="announcementTitle">v1.2.0 · 沉浸酒桌</h2>
       <p class="release-date">2026-07-24</p>
