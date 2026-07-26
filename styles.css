@@ -371,6 +371,12 @@ input:disabled { opacity: .62; cursor: wait; }
   .profile-card .primary-btn { grid-area: action; }
 }
 
+@media (max-width: 360px) {
+  .topbar { gap: 6px; }
+  .brand { display: none; }
+  .round-info { margin-left: auto; gap: 6px; }
+}
+
 @media (hover: none) {
   .icon-btn:hover, .mode-card:hover, .primary-btn:hover, .secondary-btn:hover, .action-btn:not(:disabled):hover { transform: none; filter: none; }
   .card:hover { transform: rotate(var(--rot)); box-shadow: 0 7px 12px #0009, inset 0 0 12px #fff7; }

@@ -24,6 +24,8 @@ test('creates the expected deck and deals five private cards', () => {
   assert.equal(engine.players.every((player) => player.hand.length === 5), true);
 
   const view = engine.viewFor('a');
+  assert.equal(view.pileCount, 0);
+  assert.equal('deckCount' in view, false);
   assert.equal(view.players.find((player) => player.id === 'a').hand.length, 5);
   assert.equal('hand' in view.players.find((player) => player.id === 'b'), false);
   assert.equal(view.players.find((player) => player.id === 'b').handCount, 5);
@@ -45,6 +47,7 @@ test('validates turn ownership and card selections', () => {
   assert.equal(engine.players[0].hand.length, 3);
   assert.equal(engine.pile.length, 2);
   assert.equal(engine.current, 'b');
+  assert.equal(engine.viewFor('a').pileCount, 2);
 });
 
 test('punishes the accused when a lie is found', () => {

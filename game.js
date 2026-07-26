@@ -10,7 +10,7 @@ const AI_PLAYERS = [
 
 const els = {
   game: $('#game'), players: $('#players'), hand: $('#hand'), targetRank: $('#targetRank'),
-  targetName: $('#targetName'), roundNo: $('#roundNo'), deckCount: $('#deckCount'),
+  targetName: $('#targetName'), roundNo: $('#roundNo'), pileCount: $('#pileCount'),
   pile: $('#playedPile'), lastClaim: $('#lastClaim'), turnBanner: $('#turnBanner'),
   selectedCount: $('#selectedCount'), selectionHint: $('#selectionHint'),
   claimText: $('#claimText'), challengeText: $('#challengeText'), play: $('#playBtn'),
@@ -65,6 +65,7 @@ const playerName = (id) => app.view?.players.find((player) => player.id === id)?
 
 let audio;
 let audioBus;
+let masterGain;
 let ambience;
 const AMBIENCE_VOLUME = .005;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -75,10 +76,12 @@ function ensureAudio() {
     audio ||= new (window.AudioContext || window.webkitAudioContext)();
     if (!audioBus) {
       audioBus = audio.createDynamicsCompressor();
+      masterGain = audio.createGain();
       audioBus.threshold.value = -18;
       audioBus.knee.value = 12;
       audioBus.ratio.value = 5;
-      audioBus.connect(audio.destination);
+      masterGain.gain.value = 1;
+      audioBus.connect(masterGain).connect(audio.destination);
     }
     if (audio.state === 'suspended') audio.resume().catch(() => {});
     return audio;
@@ -198,7 +201,7 @@ function setSound(enabled) {
   els.sound.setAttribute('aria-pressed', String(enabled));
   els.sound.setAttribute('aria-label', enabled ? '关闭声音与环境音乐' : '开启声音与环境音乐');
   if (enabled) startAmbience();
-  if (ambience && audio) ambience.gain.gain.setTargetAtTime(enabled && !document.hidden ? AMBIENCE_VOLUME : 0, audio.currentTime, .08);
+  if (masterGain && audio) masterGain.gain.setTargetAtTime(enabled && !document.hidden ? 1 : 0, audio.currentTime, .03);
 }
 
 function toast(message) {
@@ -299,7 +302,7 @@ function render() {
   els.targetRank.textContent = view.target;
   els.targetName.textContent = CARD_NAMES[view.target];
   els.roundNo.textContent = view.round;
-  els.deckCount.textContent = view.deckCount;
+  els.pileCount.textContent = view.pileCount;
   els.claimText.textContent = `宣称是 ${view.target}`;
   els.youLabel.textContent = me ? `${me.name} · 你的手牌` : '旁观牌局';
   const context = app.mode === 'online' ? `房间 ${app.room?.code || ''}` : '单人模式';
@@ -369,7 +372,7 @@ function renderControls(me, view) {
   els.challengeText.textContent = previous ? `揭穿 ${previous.name} 的 ${view.lastPlay.count} 张牌` : '尚无可质疑出牌';
   els.selectionHint.textContent = app.selected.size
     ? `已选择 ${app.selected.size} 张 · 将宣称为 ${view.target}`
-    : myTurn ? view.lastPlay ? '继续出牌，或质疑上一手' : '选择 1–3 张牌' : me?.alive ? '等待轮到你' : '你已离席，正在旁观';
+    : myTurn ? !me.handCount && view.lastPlay ? '手牌已出尽，只能质疑上一手' : view.lastPlay ? '继续出牌，或质疑上一手' : '选择 1–3 张牌' : me?.alive ? '等待轮到你' : '你已离席，正在旁观';
   els.play.disabled = !myTurn || app.selected.size < 1 || app.selected.size > 3;
   els.challenge.disabled = !myTurn || !view.lastPlay;
   const current = view.players.find((player) => player.id === view.current);
@@ -414,6 +417,7 @@ function startSolo() {
   startAmbience();
   showGame();
   refreshLocal();
+  soundCue('ready');
   maybeRunAI();
 }
 
@@ -524,6 +528,7 @@ function continueLocal() {
   app.busy = false;
   refreshLocal();
   if (app.view.phase !== 'ended') {
+    soundCue('ready');
     maybeRunAI();
     focusSoon(app.view.current === app.youId ? els.hand.querySelector('.card') : $('#menuBtn'));
   }
@@ -666,6 +671,7 @@ function handleOnlineMessage(message, socket) {
     return;
   }
   if (message.type === 'game-state') {
+    const roundStarted = message.state.phase === 'playing' && message.state.round !== app.view?.round;
     const closingReveal = message.state.phase === 'playing' && !els.reveal.hidden;
     const startingMatch = !app.profileActive || (message.state.round === 1 && app.view?.phase === 'ended');
     if (startingMatch) {
@@ -697,6 +703,7 @@ function handleOnlineMessage(message, socket) {
       els.reveal.hidden = true;
     }
     render();
+    if (roundStarted) soundCue('ready');
     if (closingReveal) focusSoon(message.state.current === app.youId ? els.hand.querySelector('.card') : $('#menuBtn'));
     if (message.state.phase === 'ended') showEnd();
     return;
@@ -897,7 +904,7 @@ els.sound.addEventListener('click', () => {
   if (!app.muted) soundCue('ready');
 });
 document.addEventListener('visibilitychange', () => {
-  if (ambience && audio) ambience.gain.gain.setTargetAtTime(!document.hidden && !app.muted ? AMBIENCE_VOLUME : 0, audio.currentTime, .08);
+  if (masterGain && audio) masterGain.gain.setTargetAtTime(!document.hidden && !app.muted ? 1 : 0, audio.currentTime, .03);
 });
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {

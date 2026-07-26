@@ -201,7 +201,6 @@ export class GameEngine {
       current: this.current,
       phase: this.phase,
       pileCount: this.pile.length,
-      deckCount: Math.max(0, 20 - this.alivePlayers().length * 5),
       lastPlay: this.lastPlay ? { player: this.lastPlay.player, count: this.lastPlay.count } : null,
       winner: this.winner,
       history: [...this.history],

@@ -31,7 +31,7 @@
       <button id="menuBtn" class="icon-btn" type="button" aria-label="打开游戏规则" aria-haspopup="dialog"><svg class="ui-icon" aria-hidden="true"><use href="#icon-menu"></use></svg></button>
       <div class="brand"><span>LIAR'S</span><b>TABLE</b></div>
       <div id="modeBadge" class="mode-badge"><i></i><span>未入座</span></div>
-      <div class="round-info"><span>第 <b id="roundNo">0</b> 局</span><i></i><span>牌堆 <b id="deckCount">20</b></span></div>
+      <div class="round-info"><span>第 <b id="roundNo">0</b> 局</span><i></i><span>桌面 <b id="pileCount">0</b></span></div>
       <button id="profileBtn" class="icon-btn" type="button" aria-label="查看酒客档案" aria-haspopup="dialog"><svg class="ui-icon" aria-hidden="true"><use href="#icon-profile"></use></svg></button>
       <button id="soundBtn" class="icon-btn" type="button" aria-label="关闭声音与环境音乐" aria-pressed="true"><svg class="ui-icon" aria-hidden="true"><use href="#icon-volume-on"></use></svg></button>
     </header>
@@ -60,7 +60,7 @@
 
       <div class="player-area">
         <div class="you-row"><span id="youLabel">你的手牌</span><small id="connectionHint"></small></div>
-        <div id="hand" class="hand" aria-label="你的手牌"></div>
+        <div id="hand" class="hand" tabindex="-1" aria-describedby="selectionHint" aria-label="你的手牌"></div>
         <div id="selectionHint" class="selection-hint">入座后开始游戏</div>
         <div class="actions">
           <button id="challengeBtn" class="action-btn challenge" type="button" disabled>
@@ -111,7 +111,7 @@
       </form>
 
       <p class="tip">JOKER 可充当任意指定牌 · 活到最后即获胜</p>
-      <button id="announcementBtn" class="version-btn" type="button" aria-haspopup="dialog">v1.3.0 · 查看本次更新</button>
+      <button id="announcementBtn" class="version-btn" type="button" aria-haspopup="dialog">v1.3.1 · 查看本次更新</button>
     </div>
   </section>
 
@@ -201,17 +201,17 @@
     <div class="panel-card announcement-card">
       <button id="closeAnnouncementBtn" class="close-btn" type="button" aria-label="关闭更新公告"><svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
       <p class="eyebrow">更新公告</p>
-      <h2 id="announcementTitle">v1.3.0 · 酒客留名</h2>
+      <h2 id="announcementTitle">v1.3.1 · 稳住氛围</h2>
       <p class="release-date">2026-07-26</p>
       <ul>
-        <li>新增「酒客档案」，实时记录打出牌数、谎言、识破谎言与熬过轮次。</li>
-        <li>根据本场行为动态授予七种酒馆称号，并生成对应酒保评语。</li>
-        <li>新增「守誓—诈术」声名刻度，直观呈现本场出牌风格。</li>
-        <li>单人查看档案会暂停 AI；联机档案不会阻塞牌局，并会自动让位给裁决。</li>
-        <li>完善档案纸页音效、焦点与多视口布局，让环境声随牌堆压力变化并避让横屏提示。</li>
+        <li>顶部状态改为准确显示桌面累计牌数，不再把未发出的牌误称为牌堆。</li>
+        <li>静音与切换后台时会平滑关闭全部输出，避免延迟音效漏出。</li>
+        <li>新增开局与换局提示音，并修正空手回合提示。</li>
+        <li>完善极窄屏顶部布局和手牌跳转焦点。</li>
       </ul>
       <details>
         <summary>历史公告</summary>
+        <article><b>v1.3.0 · 酒客留名</b><time>2026-07-26</time><p>新增酒客档案、动态称号与声名刻度，并让环境声随牌局压力变化。</p></article>
         <article><b>v1.2.0 · 沉浸酒桌</b><time>2026-07-24</time><p>强化牌桌反馈、程序化音效与环境音乐，并完善移动端和短横屏体验。</p></article>
         <article><b>v1.1.1 · 稳住酒桌</b><time>2026-07-23</time><p>修复联机状态锁死、弹层焦点与重复头像，并优化触屏、窄屏和音频峰值。</p></article>
         <article><b>v1.1.0 · 同桌共饮</b><time>2026-07-23</time><p>新增 2–4 人局域网房间、权威服务器、断线处理、共用规则引擎与移动端重构。</p></article>
