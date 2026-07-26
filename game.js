@@ -1,4 +1,5 @@
 import { CARD_NAMES, GameEngine, shuffle } from './src/game-engine.js';
+import { createGuestProfile, describeGuest, recordChallenge, recordClaim, syncSurvivedRounds } from './src/guest-profile.js';
 
 const $ = (selector) => document.querySelector(selector);
 const AI_PLAYERS = [
@@ -23,6 +24,10 @@ const els = {
   onlineContinue: $('#onlineContinue'), end: $('#endOverlay'), endTitle: $('#endTitle'),
   endCopy: $('#endCopy'), restart: $('#restartBtn'), endLeave: $('#endLeaveBtn'),
   menu: $('#menuOverlay'), announcement: $('#announcementOverlay'), sound: $('#soundBtn'),
+  profile: $('#profileOverlay'), profileButton: $('#profileBtn'), profileTitle: $('#profileTitle'),
+  profileQuote: $('#profileQuote'), profileCards: $('#profileCards'), profileLies: $('#profileLies'),
+  profileChallenges: $('#profileChallenges'), profileRounds: $('#profileRounds'), profileGuile: $('#profileGuile'),
+  endProfileSummary: $('#endProfileSummary'),
   modeBadge: $('#modeBadge'), youLabel: $('#youLabel'), connectionHint: $('#connectionHint'),
   createRoom: $('#createRoomBtn'), joinRoom: $('#joinRoomBtn'), backMode: $('#backModeBtn'),
 };
@@ -46,6 +51,9 @@ const app = {
   connecting: false,
   lastFocus: null,
   announcementReturn: null,
+  profileData: createGuestProfile(),
+  profileActive: false,
+  pendingClaim: null,
 };
 
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({
@@ -127,6 +135,7 @@ function soundCue(name) {
   if (name === 'bang') { noiseBurst(.45, .11, 420); tone(42, .7, 'square', .085); }
   if (name === 'empty') { noiseBurst(.035, .026, 2400); tone(210, .06, 'triangle', .025); }
   if (name === 'ready') { tone(440, .07, 'sine', .025); tone(660, .09, 'sine', .018, .06); }
+  if (name === 'paper') { noiseBurst(.13, .012, 1800); tone(190, .08, 'triangle', .01); }
 }
 
 function startAmbience() {
@@ -143,7 +152,7 @@ function startAmbience() {
     oscillator.start();
     return oscillator;
   });
-  const noiseBuffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+  const noiseBuffer = context.createBuffer(1, context.sampleRate * 8, context.sampleRate);
   const noiseData = noiseBuffer.getChannelData(0);
   for (let index = 0; index < noiseData.length; index += 1) {
     noiseData[index] = Math.random() < .00045 ? (Math.random() * 2 - 1) * .8 : (Math.random() * 2 - 1) * .025;
@@ -171,7 +180,16 @@ function startAmbience() {
   lfo.connect(lfoGain).connect(mix.gain);
   fire.start();
   lfo.start();
-  ambience = { gain, oscillators, fire, lfo };
+  ambience = { gain, filter, mix, fire, fireGain, oscillators, lfo };
+  setAmbienceTension(app.view?.pileCount || 0, app.view?.current === app.youId);
+}
+
+function setAmbienceTension(pileCount = 0, yourTurn = false) {
+  if (!ambience || !audio) return;
+  const tension = Math.min(1, pileCount / 12 + Number(yourTurn) * .12);
+  ambience.filter.frequency.setTargetAtTime(240 + tension * 110, audio.currentTime, .7);
+  ambience.mix.gain.setTargetAtTime(.58 + tension * .08, audio.currentTime, .7);
+  ambience.fireGain.gain.setTargetAtTime(.1 + tension * .04, audio.currentTime, .7);
 }
 
 function setSound(enabled) {
@@ -195,8 +213,38 @@ function focusSoon(element) {
 }
 
 function syncGameInert() {
-  els.game.inert = [els.start, els.lobby, els.reveal, els.end, els.menu, els.announcement]
+  els.game.inert = [els.start, els.lobby, els.reveal, els.end, els.menu, els.profile, els.announcement]
     .some((overlay) => !overlay.hidden);
+}
+
+function renderProfile() {
+  const profile = app.profileData;
+  const description = describeGuest(profile);
+  els.profileTitle.textContent = description.title;
+  els.profileQuote.textContent = description.quote;
+  els.profileCards.textContent = profile.cardsPlayed;
+  els.profileLies.textContent = profile.lies;
+  els.profileChallenges.textContent = profile.challengesWon;
+  els.profileRounds.textContent = profile.roundsSurvived;
+  els.profileGuile.style.setProperty('--guile', `${description.guile}%`);
+  els.profileGuile.setAttribute('aria-valuenow', description.guile);
+  els.profileGuile.setAttribute('aria-valuetext', profile.claims ? `诈术倾向 ${description.guile}%` : '尚未落牌');
+  els.endProfileSummary.textContent = `酒馆称号 · ${description.title}`;
+}
+
+function resetProfile() {
+  app.profileData = createGuestProfile();
+  app.pendingClaim = null;
+  renderProfile();
+}
+
+function syncProfileRound(view) {
+  const alive = view.players.find((player) => player.id === app.youId)?.alive;
+  const completed = view.phase === 'reveal' || view.phase === 'ended';
+  const next = syncSurvivedRounds(app.profileData, view.round, alive, completed);
+  if (next.roundsSurvived === app.profileData.roundsSurvived) return;
+  app.profileData = next;
+  renderProfile();
 }
 
 function setConnecting(connecting) {
@@ -254,7 +302,8 @@ function render() {
   els.deckCount.textContent = view.deckCount;
   els.claimText.textContent = `宣称是 ${view.target}`;
   els.youLabel.textContent = me ? `${me.name} · 你的手牌` : '旁观牌局';
-  els.connectionHint.textContent = app.mode === 'online' ? `房间 ${app.room?.code || ''}` : '单人模式';
+  const context = app.mode === 'online' ? `房间 ${app.room?.code || ''}` : '单人模式';
+  els.connectionHint.textContent = `${context} · ${describeGuest(app.profileData).title}`;
   renderOpponents(opponents, view);
   renderHand(me, view);
   renderPile(view.pileCount);
@@ -311,6 +360,7 @@ function renderHistory(history = []) {
 
 function renderControls(me, view) {
   const myTurn = Boolean(me?.alive && view.current === app.youId && view.phase === 'playing' && !app.busy && !app.paused);
+  setAmbienceTension(view.phase === 'reveal' ? 12 : view.pileCount, myTurn);
   const previous = view.lastPlay ? view.players.find((player) => player.id === view.lastPlay.player) : null;
   els.selectedCount.textContent = app.selected.size;
   const claimMessage = previous ? `${previous.name} 宣称打出 ${view.lastPlay.count} 张 ${view.target}` : '尚无出牌';
@@ -342,6 +392,7 @@ function toggleCard(index, restoreFocus = false) {
 
 function refreshLocal() {
   app.view = app.engine.viewFor(app.youId);
+  syncProfileRound(app.view);
   app.busy = app.view.phase !== 'playing';
   render();
   if (app.view.phase === 'ended') showEnd();
@@ -356,6 +407,8 @@ function startSolo() {
   app.selected.clear();
   app.busy = false;
   app.paused = false;
+  app.profileActive = true;
+  resetProfile();
   app.engine = new GameEngine([{ id: 'you', name: '你', avatar: '♠' }, ...AI_PLAYERS]);
   app.engine.start();
   startAmbience();
@@ -409,6 +462,7 @@ function maybeRunAI() {
 async function showReveal(result, online) {
   const sequence = ++app.revealSequence;
   els.menu.hidden = true;
+  els.profile.hidden = true;
   app.paused = false;
   app.lastFocus = document.activeElement;
   els.reveal.hidden = false;
@@ -452,6 +506,10 @@ async function localChallenge(challenger) {
   if (app.busy) return;
   app.busy = true;
   const result = app.engine.challenge(challenger);
+  if (challenger === app.youId) {
+    app.profileData = recordChallenge(app.profileData, result.lied);
+    renderProfile();
+  }
   refreshLocal();
   await showReveal(result, false);
 }
@@ -475,7 +533,9 @@ function playSelected() {
   const indices = [...app.selected];
   if (app.mode === 'solo') {
     try {
-      app.engine.play(app.youId, indices);
+      const result = app.engine.play(app.youId, indices);
+      app.profileData = recordClaim(app.profileData, result.cards, app.engine.target);
+      renderProfile();
       app.selected.clear();
       soundCue('play');
       refreshLocal();
@@ -485,7 +545,10 @@ function playSelected() {
     }
     return;
   }
+  const me = app.view.players.find((player) => player.id === app.youId);
+  const pendingClaim = { cards: indices.map((index) => me.hand[index]), target: app.view.target };
   if (sendOnline({ type: 'play', indices })) {
+    app.pendingClaim = pendingClaim;
     app.busy = true;
     soundCue('play');
     render();
@@ -583,6 +646,7 @@ function sendOnline(message) {
 
 function handleOnlineMessage(message, socket) {
   if (message.type === 'error') {
+    app.pendingClaim = null;
     if (!app.room) {
       abortConnection(socket, message.message);
       return;
@@ -603,10 +667,21 @@ function handleOnlineMessage(message, socket) {
   }
   if (message.type === 'game-state') {
     const closingReveal = message.state.phase === 'playing' && !els.reveal.hidden;
+    const startingMatch = !app.profileActive || (message.state.round === 1 && app.view?.phase === 'ended');
+    if (startingMatch) {
+      app.profileActive = true;
+      resetProfile();
+    }
+    if (app.pendingClaim && message.state.lastPlay?.player === message.youId) {
+      app.profileData = recordClaim(app.profileData, app.pendingClaim.cards, app.pendingClaim.target);
+      app.pendingClaim = null;
+      renderProfile();
+    }
     app.mode = 'online';
     app.youId = message.youId;
     app.room = message.room;
     app.view = message.state;
+    syncProfileRound(message.state);
     app.selected.clear();
     app.busy = message.state.phase !== 'playing';
     showGame();
@@ -627,6 +702,10 @@ function handleOnlineMessage(message, socket) {
     return;
   }
   if (message.type === 'reveal') {
+    if (message.result.challenger === app.youId) {
+      app.profileData = recordChallenge(app.profileData, message.result.lied);
+      renderProfile();
+    }
     app.selected.clear();
     app.busy = true;
     render();
@@ -659,6 +738,7 @@ function showEnd() {
   const online = app.mode === 'online';
   const host = online && app.room?.hostId === app.youId;
   els.menu.hidden = true;
+  els.profile.hidden = true;
   app.paused = false;
   els.restart.hidden = online && !host;
   els.restart.disabled = false;
@@ -693,6 +773,28 @@ function closeMenu() {
   els.menu.hidden = true;
   syncGameInert();
   app.paused = false;
+  focusSoon(app.lastFocus);
+  maybeRunAI();
+}
+
+function openProfile() {
+  if (!app.view) return;
+  app.lastFocus = document.activeElement;
+  app.paused = app.mode === 'solo';
+  clearTimeout(app.aiTimer);
+  if (app.mode === 'online') toast('联机牌局不会暂停');
+  renderProfile();
+  els.profile.hidden = false;
+  syncGameInert();
+  soundCue('paper');
+  focusSoon($('#closeProfileBtn'));
+}
+
+function closeProfile() {
+  els.profile.hidden = true;
+  syncGameInert();
+  app.paused = false;
+  soundCue('paper');
   focusSoon(app.lastFocus);
   maybeRunAI();
 }
@@ -732,7 +834,9 @@ function returnHome(closeSocket = true) {
   app.selected.clear();
   app.busy = false;
   app.paused = false;
-  [els.lobby, els.reveal, els.end, els.menu, els.announcement].forEach((overlay) => { overlay.hidden = true; });
+  app.profileActive = false;
+  resetProfile();
+  [els.lobby, els.reveal, els.end, els.menu, els.profile, els.announcement].forEach((overlay) => { overlay.hidden = true; });
   els.start.hidden = false;
   els.modeChooser.hidden = false;
   els.lanPanel.hidden = true;
@@ -781,6 +885,9 @@ els.restart.addEventListener('click', restartGame);
 $('#menuBtn').addEventListener('click', openMenu);
 $('#closeMenuBtn').addEventListener('click', closeMenu);
 $('#resumeBtn').addEventListener('click', closeMenu);
+els.profileButton.addEventListener('click', openProfile);
+$('#closeProfileBtn').addEventListener('click', closeProfile);
+$('#profileDoneBtn').addEventListener('click', closeProfile);
 $('#announcementBtn').addEventListener('click', openAnnouncement);
 $('#closeAnnouncementBtn').addEventListener('click', closeAnnouncement);
 $('#announcementDoneBtn').addEventListener('click', closeAnnouncement);
@@ -795,6 +902,7 @@ document.addEventListener('visibilitychange', () => {
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     if (!els.announcement.hidden) closeAnnouncement();
+    else if (!els.profile.hidden) closeProfile();
     else if (!els.menu.hidden) closeMenu();
     return;
   }

@@ -22,15 +22,17 @@
       <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
       <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5m5-5-5 5 5 5"/></symbol>
       <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+      <symbol id="icon-profile" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="9" r="2.5"/><path d="M8.5 16c.8-2 2-3 3.5-3s2.7 1 3.5 3M8 6h1m6 12h1"/></symbol>
     </defs>
   </svg>
 
   <main id="game" class="game-shell" aria-label="骗子酒馆牌桌">
     <header class="topbar">
-      <button id="menuBtn" class="icon-btn" type="button" aria-label="打开游戏规则"><svg class="ui-icon" aria-hidden="true"><use href="#icon-menu"></use></svg></button>
+      <button id="menuBtn" class="icon-btn" type="button" aria-label="打开游戏规则" aria-haspopup="dialog"><svg class="ui-icon" aria-hidden="true"><use href="#icon-menu"></use></svg></button>
       <div class="brand"><span>LIAR'S</span><b>TABLE</b></div>
       <div id="modeBadge" class="mode-badge"><i></i><span>未入座</span></div>
       <div class="round-info"><span>第 <b id="roundNo">0</b> 局</span><i></i><span>牌堆 <b id="deckCount">20</b></span></div>
+      <button id="profileBtn" class="icon-btn" type="button" aria-label="查看酒客档案" aria-haspopup="dialog"><svg class="ui-icon" aria-hidden="true"><use href="#icon-profile"></use></svg></button>
       <button id="soundBtn" class="icon-btn" type="button" aria-label="关闭声音与环境音乐" aria-pressed="true"><svg class="ui-icon" aria-hidden="true"><use href="#icon-volume-on"></use></svg></button>
     </header>
 
@@ -109,7 +111,7 @@
       </form>
 
       <p class="tip">JOKER 可充当任意指定牌 · 活到最后即获胜</p>
-      <button id="announcementBtn" class="version-btn" type="button">v1.2.0 · 查看本次更新</button>
+      <button id="announcementBtn" class="version-btn" type="button" aria-haspopup="dialog">v1.3.0 · 查看本次更新</button>
     </div>
   </section>
 
@@ -143,15 +145,40 @@
     </div>
   </section>
 
-  <section id="endOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="endTitle" aria-describedby="endCopy" hidden>
+  <section id="endOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="endTitle" aria-describedby="endCopy endProfileSummary" hidden>
     <div class="panel-card end-card">
       <p class="eyebrow">牌局结束</p>
       <h2 id="endTitle">你活了下来</h2>
       <p id="endCopy">酒馆记住了最后的赢家。</p>
+      <p id="endProfileSummary" class="end-profile-summary">酒馆称号 · 雾中新客</p>
       <div class="panel-actions">
         <button id="endLeaveBtn" class="secondary-btn" type="button" hidden>返回首页</button>
         <button id="restartBtn" class="primary-btn" type="button"><span>再来一局</span><small>命运重新洗牌</small></button>
       </div>
+    </div>
+  </section>
+
+  <section id="profileOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="profileHeading" aria-describedby="profileQuote" hidden>
+    <div class="panel-card profile-card">
+      <button id="closeProfileBtn" class="close-btn" type="button" aria-label="关闭酒客档案"><svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
+      <p class="eyebrow">酒馆私藏</p>
+      <h2 id="profileHeading">酒客档案</h2>
+      <div class="profile-identity">
+        <span class="profile-seal" aria-hidden="true"><svg class="ui-icon"><use href="#icon-profile"></use></svg></span>
+        <div><small>当前称号</small><strong id="profileTitle">雾中新客</strong></div>
+      </div>
+      <p id="profileQuote" class="profile-quote">酒保还在等你露出第一张底牌。</p>
+      <div class="profile-stats" aria-label="本场行为统计">
+        <div><strong id="profileCards">0</strong><span>打出牌数</span></div>
+        <div><strong id="profileLies">0</strong><span>谎言次数</span></div>
+        <div><strong id="profileChallenges">0</strong><span>识破谎言</span></div>
+        <div><strong id="profileRounds">0</strong><span>熬过轮次</span></div>
+      </div>
+      <div class="profile-reputation">
+        <div><span>守誓</span><b>酒馆声名</b><span>诈术</span></div>
+        <div id="profileGuile" class="profile-meter" role="meter" aria-label="诈术倾向" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-valuetext="尚未落牌"><i></i></div>
+      </div>
+      <button id="profileDoneBtn" class="primary-btn compact" type="button">合上档案</button>
     </div>
   </section>
 
@@ -174,18 +201,18 @@
     <div class="panel-card announcement-card">
       <button id="closeAnnouncementBtn" class="close-btn" type="button" aria-label="关闭更新公告"><svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
       <p class="eyebrow">更新公告</p>
-      <h2 id="announcementTitle">v1.2.0 · 沉浸酒桌</h2>
-      <p class="release-date">2026-07-24</p>
+      <h2 id="announcementTitle">v1.3.0 · 酒客留名</h2>
+      <p class="release-date">2026-07-26</p>
       <ul>
-        <li>新增上一手宣称提示，质疑按钮会明确显示玩家与牌数。</li>
-        <li>区分 AI 与真人回合文案，并强化当前玩家、出牌状态和触屏反馈。</li>
-        <li>重制选牌、落牌、质疑、转轮与击发音效，减少单调蜂鸣感。</li>
-        <li>升级程序化环境音乐，加入柔和和弦起伏与壁炉底噪。</li>
-        <li>提高移动端文字可读性，修正窄屏按钮、牌桌层级和弹层滚动体验。</li>
-        <li>修复端口占用时重复抛出 WebSocket 错误堆栈的问题。</li>
+        <li>新增「酒客档案」，实时记录打出牌数、谎言、识破谎言与熬过轮次。</li>
+        <li>根据本场行为动态授予七种酒馆称号，并生成对应酒保评语。</li>
+        <li>新增「守誓—诈术」声名刻度，直观呈现本场出牌风格。</li>
+        <li>单人查看档案会暂停 AI；联机档案不会阻塞牌局，并会自动让位给裁决。</li>
+        <li>完善档案纸页音效、焦点与多视口布局，让环境声随牌堆压力变化并避让横屏提示。</li>
       </ul>
       <details>
         <summary>历史公告</summary>
+        <article><b>v1.2.0 · 沉浸酒桌</b><time>2026-07-24</time><p>强化牌桌反馈、程序化音效与环境音乐，并完善移动端和短横屏体验。</p></article>
         <article><b>v1.1.1 · 稳住酒桌</b><time>2026-07-23</time><p>修复联机状态锁死、弹层焦点与重复头像，并优化触屏、窄屏和音频峰值。</p></article>
         <article><b>v1.1.0 · 同桌共饮</b><time>2026-07-23</time><p>新增 2–4 人局域网房间、权威服务器、断线处理、共用规则引擎与移动端重构。</p></article>
         <article><b>v1.0.0 · 初次开席</b><time>2026-07-22</time><p>推出单人骗子酒馆：三名 AI、质疑裁决与左轮淘汰玩法。</p></article>

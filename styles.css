@@ -94,7 +94,8 @@ button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visibl
 
 .player-area { position: absolute; z-index: 10; left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(740px, 96%); display: flex; flex-direction: column; align-items: center; }
 .you-row { width: min(390px, 92%); display: flex; justify-content: space-between; color: #c7b69f; font-size: 10px; letter-spacing: 2px; }
-.you-row small { color: #8f806e; letter-spacing: 0; }
+.you-row > span, .you-row small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.you-row small { max-width: 58%; color: #8f806e; letter-spacing: 0; }
 .hand { height: 135px; display: flex; align-items: flex-end; justify-content: center; padding: 0 20px; }
 .card { --rot: 0deg; position: relative; width: 82px; height: 118px; margin-left: -11px; border: 1px solid #d5c7ae; border-radius: 7px; color: #17100c; background: linear-gradient(145deg,#f4eddf,#bfb09a); box-shadow: 0 7px 12px #0009, inset 0 0 12px #fff7; cursor: pointer; transform: rotate(var(--rot)); transform-origin: 50% 130%; transition: .18s ease; }
 .card:first-child { margin-left: 0; }
@@ -203,6 +204,30 @@ input:disabled { opacity: .62; cursor: wait; }
 .end-card { padding: 48px; }
 .end-card h2 { font-size: 40px; color: #efd1a0; }
 .end-card > p:not(.eyebrow) { color: #bbaa93; }
+.end-profile-summary { color: var(--gold) !important; font-size: 11px; letter-spacing: 3px; }
+.profile-card { width: min(610px,94vw); overflow: hidden; background: radial-gradient(circle at 18% 8%,#3a281a,#130d09 48%,#090605); }
+.profile-card::after { content:""; position:absolute; inset:0; pointer-events:none; opacity:.18; background: repeating-linear-gradient(168deg,transparent 0 18px,#b8915e22 19px 20px); }
+.profile-card > :not(.close-btn) { position: relative; z-index: 1; }
+.profile-identity { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 18px 0 9px; }
+.profile-identity > div { text-align: left; }
+.profile-identity small { display: block; color: #9d8b72; font-size: 9px; letter-spacing: 3px; }
+.profile-identity strong { display: block; margin-top: 4px; color: #f1d19d; font-size: 24px; letter-spacing: 5px; }
+.profile-seal { width: 58px; height: 58px; display: grid; place-items: center; border: 2px solid #9e3c32; border-radius: 50%; color: #d78370; transform: rotate(-7deg); box-shadow: inset 0 0 0 4px #5e211d55; }
+.profile-seal .ui-icon { width: 30px; height: 30px; }
+.profile-quote { min-height: 22px; margin: 0 auto 18px; color: #baa68b; font-size: 12px; letter-spacing: 1px; }
+.profile-stats { display: grid; grid-template-columns: repeat(4,1fr); border: 1px solid #6b4e31; background: #08060499; }
+.profile-stats > div { padding: 14px 8px; border-left: 1px solid #4d3825; }
+.profile-stats > div:first-child { border-left: 0; }
+.profile-stats strong, .profile-stats span { display: block; }
+.profile-stats strong { color: #efd09d; font: bold 26px "American Typewriter","Courier New",monospace; }
+.profile-stats span { margin-top: 4px; color: #998972; font-size: 9px; letter-spacing: 2px; }
+.profile-reputation { margin: 17px 0 20px; }
+.profile-reputation > div:first-child { display: flex; justify-content: space-between; margin-bottom: 7px; color: #8e7c64; font-size: 9px; letter-spacing: 2px; }
+.profile-reputation b { color: #c7aa7f; font-weight: 400; letter-spacing: 4px; }
+.profile-meter { --guile: 50%; position: relative; height: 8px; border: 1px solid #685037; background: linear-gradient(90deg,#796b50,#5f4631 50%,#6d211c); }
+.profile-meter::after { content:""; position:absolute; left:50%; top:-4px; width:1px; height:14px; background:#b39770aa; }
+.profile-meter i { position: absolute; left: var(--guile); top: 50%; width: 15px; height: 15px; border: 2px solid #24150e; border-radius: 50%; background: #e0ae67; box-shadow: 0 0 12px #d6994e88; transform: translate(-50%,-50%); transition: left .35s ease; }
+.profile-card .primary-btn { display: block; margin: 0 auto; }
 .menu-card { text-align: left; padding: 38px 46px; }
 .menu-card h2 { margin-bottom: 20px; }
 .menu-card ol { margin: 0; padding: 0; list-style: none; }
@@ -270,6 +295,9 @@ input:disabled { opacity: .62; cursor: wait; }
   .lan-actions > span { display: none; }
   .join-row { width: 100%; justify-content: center; }
   .panel-card { padding: 28px 20px; }
+  .profile-stats { grid-template-columns: repeat(2,1fr); }
+  .profile-stats > div:nth-child(3) { border-left: 0; }
+  .profile-stats > div:nth-child(n+3) { border-top: 1px solid #4d3825; }
   .lobby-players { grid-template-columns: 1fr; }
   .menu-card { padding: 34px 24px; }
   .menu-card li { grid-template-columns: 48px 1fr; }
@@ -328,6 +356,19 @@ input:disabled { opacity: .62; cursor: wait; }
   .lobby-card .primary-btn, .lobby-card .secondary-btn { min-width: 150px; height: 44px; }
   .room-code { margin: 4px 0; padding: 4px 18px; font-size: 29px; }
   .lobby-status { margin: 4px 0; }
+  .toast { top: max(4px, env(safe-area-inset-top)); padding: 6px 14px; font-size: 10px; transform: translate(-50%,-8px); }
+  .profile-card { width: min(720px,94vw); display: grid; grid-template-columns: .9fr 1.2fr; grid-template-areas: "eyebrow eyebrow" "heading heading" "identity stats" "quote stats" "reputation reputation" "action action"; align-items: center; gap: 5px 22px; }
+  .profile-card > .eyebrow { grid-area: eyebrow; }
+  .profile-card > h2 { grid-area: heading; }
+  .profile-identity { grid-area: identity; margin: 3px 0; }
+  .profile-quote { grid-area: quote; margin: 0; font-size: 10px; }
+  .profile-stats { grid-area: stats; grid-template-columns: repeat(4,1fr); }
+  .profile-stats > div { min-width: 0; padding: 10px 4px; border-top: 0 !important; border-left: 1px solid #4d3825 !important; }
+  .profile-stats > div:first-child { border-left: 0 !important; }
+  .profile-stats strong { font-size: 21px; }
+  .profile-stats span { letter-spacing: 0; }
+  .profile-reputation { grid-area: reputation; margin: 5px 0 7px; }
+  .profile-card .primary-btn { grid-area: action; }
 }
 
 @media (hover: none) {
