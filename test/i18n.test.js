@@ -6,6 +6,9 @@ const REQUIRED_KEYS = [
   'settingsTitle', 'tutorialTitle', 'startSolo', 'startLan', 'actionPlay', 'actionChallenge',
   'tabExperience', 'tabSound', 'tabLanguage', 'tabNews', 'tabAbout', 'openTutorial',
   'done', 'next', 'back', 'finish', 'repository', 'issues', 'discussions', 'author', 'home',
+  'tabGameplay', 'resetDefaults', 'motionSpeed', 'cardScale', 'sceneBrightness', 'sceneContrast', 'particles',
+  'aiSpeed', 'autoFocus', 'shortcuts', 'history', 'turnEffects', 'ambienceIntensity', 'musicWarmth',
+  'uiSounds', 'gameSounds', 'announcementSounds', 'cuePitch',
 ];
 
 test('ships ten complete language choices for core UI', () => {

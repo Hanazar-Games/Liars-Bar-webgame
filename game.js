@@ -9,6 +9,14 @@ const AI_PLAYERS = [
   { id: 'morgan', name: '老狐狸 · 摩根', avatar: '♣', bot: true },
 ];
 
+const DEFAULT_PREFERENCES = Object.freeze({
+  language: 'zh-CN', motion: true, motionSpeed: 100, visualEffects: true,
+  sceneBrightness: 100, sceneContrast: 100, particleDensity: 100, cardScale: 100,
+  aiSpeed: 100, autoFocus: true, shortcuts: true, history: true, turnEffects: true,
+  masterVolume: .8, music: true, musicVolume: .7, ambienceIntensity: 100, musicWarmth: 55,
+  sfx: true, sfxVolume: .85, cuePitch: 100, uiSounds: true, gameSounds: true, announcementSounds: true,
+});
+
 const els = {
   game: $('#game'), players: $('#players'), hand: $('#hand'), targetRank: $('#targetRank'),
   targetName: $('#targetName'), roundNo: $('#roundNo'), pileCount: $('#pileCount'),
@@ -38,6 +46,12 @@ const els = {
   soundEnabled: $('#soundEnabled'), masterVolume: $('#masterVolume'), musicEnabled: $('#musicEnabled'),
   musicVolume: $('#musicVolume'), sfxEnabled: $('#sfxEnabled'), sfxVolume: $('#sfxVolume'),
   motionEnabled: $('#motionEnabled'), visualEffectsEnabled: $('#visualEffectsEnabled'),
+  motionSpeed: $('#motionSpeed'), cardScale: $('#cardScale'), sceneBrightness: $('#sceneBrightness'),
+  sceneContrast: $('#sceneContrast'), particleDensity: $('#particleDensity'), aiSpeed: $('#aiSpeed'),
+  autoFocusEnabled: $('#autoFocusEnabled'), shortcutsEnabled: $('#shortcutsEnabled'), historyEnabled: $('#historyEnabled'),
+  turnEffectsEnabled: $('#turnEffectsEnabled'), ambienceIntensity: $('#ambienceIntensity'), musicWarmth: $('#musicWarmth'),
+  cuePitch: $('#cuePitch'), uiSoundsEnabled: $('#uiSoundsEnabled'), gameSoundsEnabled: $('#gameSoundsEnabled'),
+  announcementSoundsEnabled: $('#announcementSoundsEnabled'),
 };
 
 const app = {
@@ -69,10 +83,7 @@ const app = {
   animateDeal: false,
   tutorialStep: 0,
   tutorialReturn: null,
-  preferences: {
-    language: 'zh-CN', motion: true, visualEffects: true,
-    masterVolume: .8, music: true, musicVolume: .7, sfx: true, sfxVolume: .85,
-  },
+  preferences: { ...DEFAULT_PREFERENCES },
 };
 
 const t = (key, values) => translate(app.preferences.language, key, values);
@@ -123,7 +134,7 @@ function tone(freq = 220, duration = .08, type = 'sine', volume = .035, delay = 
   const gain = context.createGain();
   const now = context.currentTime + delay;
   oscillator.type = type;
-  oscillator.frequency.value = freq;
+  oscillator.frequency.value = freq * app.preferences.cuePitch / 100;
   gain.gain.setValueAtTime(.0001, now);
   gain.gain.exponentialRampToValueAtTime(volume, now + Math.min(.008, duration / 3));
   gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
@@ -156,6 +167,9 @@ function noiseBurst(duration = .06, volume = .02, frequency = 1200, delay = 0) {
 }
 
 function soundCue(name) {
+  if (['select', 'paper'].includes(name) && !app.preferences.uiSounds) return;
+  if (['play', 'challenge', 'spin', 'bang', 'empty', 'ready'].includes(name) && !app.preferences.gameSounds) return;
+  if (name === 'notice' && !app.preferences.announcementSounds) return;
   if (name === 'select') tone(420, .045, 'triangle', .022);
   if (name === 'play') { noiseBurst(.07, .028, 850); tone(115, .09, 'triangle', .02); }
   if (name === 'challenge') { tone(155, .13, 'sawtooth', .028); tone(82, .2, 'sawtooth', .022, .09); }
@@ -164,6 +178,7 @@ function soundCue(name) {
   if (name === 'empty') { noiseBurst(.035, .026, 2400); tone(210, .06, 'triangle', .025); }
   if (name === 'ready') { tone(440, .07, 'sine', .025); tone(660, .09, 'sine', .018, .06); }
   if (name === 'paper') { noiseBurst(.13, .012, 1800); tone(190, .08, 'triangle', .01); }
+  if (name === 'notice') { noiseBurst(.09, .01, 1600); tone(330, .07, 'triangle', .014); }
 }
 
 function startAmbience() {
@@ -215,10 +230,12 @@ function startAmbience() {
 
 function setAmbienceTension(pileCount = 0, yourTurn = false) {
   if (!ambience || !audio) return;
-  const tension = Math.min(1, pileCount / 12 + Number(yourTurn) * .12);
-  ambience.filter.frequency.setTargetAtTime(240 + tension * 110, audio.currentTime, .7);
-  ambience.mix.gain.setTargetAtTime(.58 + tension * .08, audio.currentTime, .7);
-  ambience.fireGain.gain.setTargetAtTime(.1 + tension * .04, audio.currentTime, .7);
+  const intensity = app.preferences.ambienceIntensity / 100;
+  const warmth = app.preferences.musicWarmth / 100;
+  const tension = Math.min(1.4, (pileCount / 12 + Number(yourTurn) * .12) * intensity);
+  ambience.filter.frequency.setTargetAtTime(170 + warmth * 150 + tension * 105, audio.currentTime, .7);
+  ambience.mix.gain.setTargetAtTime(.54 + intensity * .05 + tension * .07, audio.currentTime, .7);
+  ambience.fireGain.gain.setTargetAtTime(.07 + warmth * .07 + tension * .035, audio.currentTime, .7);
 }
 
 function syncAudioLevels() {
@@ -226,7 +243,8 @@ function syncAudioLevels() {
   const audible = !app.muted && !document.hidden;
   masterGain?.gain.setTargetAtTime(audible ? app.preferences.masterVolume : 0, audio.currentTime, .03);
   sfxGain?.gain.setTargetAtTime(app.preferences.sfx ? app.preferences.sfxVolume : 0, audio.currentTime, .03);
-  ambience?.gain.gain.setTargetAtTime(audible && app.preferences.music ? AMBIENCE_VOLUME * app.preferences.musicVolume : 0, audio.currentTime, .08);
+  const ambienceLevel = AMBIENCE_VOLUME * app.preferences.musicVolume * app.preferences.ambienceIntensity / 100;
+  ambience?.gain.gain.setTargetAtTime(audible && app.preferences.music ? ambienceLevel : 0, audio.currentTime, .08);
 }
 
 function setSound(enabled) {
@@ -249,6 +267,10 @@ function focusSoon(element) {
   requestAnimationFrame(() => element?.focus());
 }
 
+function focusGameSoon(element) {
+  if (app.preferences.autoFocus) focusSoon(element);
+}
+
 function syncGameInert() {
   els.game.inert = [els.start, els.lobby, els.reveal, els.end, els.menu, els.profile, els.settings, els.tutorial, els.announcement]
     .some((overlay) => !overlay.hidden);
@@ -264,26 +286,70 @@ function applyTranslations() {
 }
 
 function syncPreferenceClasses() {
+  const root = document.documentElement;
+  const motionFactor = 100 / app.preferences.motionSpeed;
   document.body.classList.toggle('calm-motion', !app.preferences.motion);
   document.body.classList.toggle('visual-effects-off', !app.preferences.visualEffects);
+  document.body.classList.toggle('history-hidden', !app.preferences.history);
+  document.body.classList.toggle('turn-effects-off', !app.preferences.turnEffects);
+  root.style.setProperty('--motion-speed', motionFactor.toFixed(3));
+  root.style.setProperty('--duration-card', `${.48 * motionFactor}s`);
+  root.style.setProperty('--duration-panel', `${.34 * motionFactor}s`);
+  root.style.setProperty('--duration-dust', `${14 * motionFactor}s`);
+  root.style.setProperty('--duration-turn', `${1.8 * motionFactor}s`);
+  root.style.setProperty('--duration-tutorial', `${2.8 * motionFactor}s`);
+  root.style.setProperty('--duration-glint', `${4.8 * motionFactor}s`);
+  root.style.setProperty('--scene-brightness', app.preferences.sceneBrightness / 100);
+  root.style.setProperty('--scene-contrast', app.preferences.sceneContrast / 100);
+  root.style.setProperty('--particle-opacity', Math.min(.45, .28 * app.preferences.particleDensity / 100));
+  root.style.setProperty('--card-scale', app.preferences.cardScale / 100);
 }
 
 function syncSettingsControls() {
   els.soundEnabled.checked = !app.muted;
-  els.masterVolume.value = Math.round(app.preferences.masterVolume * 100);
   els.musicEnabled.checked = app.preferences.music;
-  els.musicVolume.value = Math.round(app.preferences.musicVolume * 100);
   els.sfxEnabled.checked = app.preferences.sfx;
-  els.sfxVolume.value = Math.round(app.preferences.sfxVolume * 100);
   els.motionEnabled.checked = app.preferences.motion;
   els.visualEffectsEnabled.checked = app.preferences.visualEffects;
+  els.autoFocusEnabled.checked = app.preferences.autoFocus;
+  els.shortcutsEnabled.checked = app.preferences.shortcuts;
+  els.historyEnabled.checked = app.preferences.history;
+  els.turnEffectsEnabled.checked = app.preferences.turnEffects;
+  els.uiSoundsEnabled.checked = app.preferences.uiSounds;
+  els.gameSoundsEnabled.checked = app.preferences.gameSounds;
+  els.announcementSoundsEnabled.checked = app.preferences.announcementSounds;
   els.language.value = app.preferences.language;
-  $('#masterVolumeValue').textContent = `${els.masterVolume.value}%`;
-  $('#musicVolumeValue').textContent = `${els.musicVolume.value}%`;
-  $('#sfxVolumeValue').textContent = `${els.sfxVolume.value}%`;
+  const ranges = {
+    masterVolume: Math.round(app.preferences.masterVolume * 100),
+    musicVolume: Math.round(app.preferences.musicVolume * 100),
+    sfxVolume: Math.round(app.preferences.sfxVolume * 100),
+    motionSpeed: app.preferences.motionSpeed, cardScale: app.preferences.cardScale,
+    sceneBrightness: app.preferences.sceneBrightness, sceneContrast: app.preferences.sceneContrast,
+    particleDensity: app.preferences.particleDensity, aiSpeed: app.preferences.aiSpeed,
+    ambienceIntensity: app.preferences.ambienceIntensity, musicWarmth: app.preferences.musicWarmth,
+    cuePitch: app.preferences.cuePitch,
+  };
+  Object.entries(ranges).forEach(([key, value]) => {
+    els[key].value = value;
+    $(`#${key}Value`).textContent = `${value}%`;
+  });
   els.masterVolume.disabled = app.muted;
-  els.musicVolume.disabled = !app.preferences.music;
-  els.sfxVolume.disabled = !app.preferences.sfx;
+  [els.musicVolume, els.ambienceIntensity, els.musicWarmth].forEach((element) => { element.disabled = !app.preferences.music; });
+  [els.sfxVolume, els.cuePitch, els.uiSoundsEnabled, els.gameSoundsEnabled, els.announcementSoundsEnabled]
+    .forEach((element) => { element.disabled = !app.preferences.sfx; });
+  els.motionSpeed.disabled = !app.preferences.motion;
+  els.particleDensity.disabled = !app.preferences.visualEffects;
+}
+
+function resetPreferences() {
+  Object.assign(app.preferences, DEFAULT_PREFERENCES);
+  setSound(true);
+  syncPreferenceClasses();
+  syncSettingsControls();
+  applyTranslations();
+  setAmbienceTension(app.view?.pileCount || 0, app.view?.current === app.youId);
+  soundCue('select');
+  toast('已恢复默认设置');
 }
 
 const TUTORIAL_STEPS = Array.from({ length: 4 }, (_, index) => ({
@@ -504,7 +570,7 @@ function startSolo() {
   showGame();
   refreshLocal();
   soundCue('ready');
-  focusSoon(app.view.current === app.youId ? els.hand.querySelector('.card') : $('#menuBtn'));
+  focusGameSoon(app.view.current === app.youId ? els.hand.querySelector('.card') : $('#menuBtn'));
   maybeRunAI();
 }
 
@@ -529,6 +595,10 @@ function chooseAI(engine, id) {
   return chosen;
 }
 
+function scaledAIDelay(milliseconds) {
+  return milliseconds * 100 / app.preferences.aiSpeed;
+}
+
 function maybeRunAI() {
   clearTimeout(app.aiTimer);
   if (app.mode !== 'solo' || app.paused || app.busy || app.engine.phase !== 'playing') return;
@@ -537,7 +607,7 @@ function maybeRunAI() {
   const session = app.session;
   const currentId = current.id;
   app.aiTimer = setTimeout(async () => {
-    await sleep(850 + Math.random() * 650);
+    await sleep(scaledAIDelay(850 + Math.random() * 650));
     if (session !== app.session || app.paused || app.busy || app.engine.current !== currentId || app.engine.phase !== 'playing') return;
     if (app.engine.lastPlay && shouldChallenge(app.engine, currentId)) {
       await localChallenge(currentId);
@@ -547,7 +617,7 @@ function maybeRunAI() {
     soundCue('play');
     refreshLocal();
     maybeRunAI();
-  }, 300);
+  }, scaledAIDelay(300));
 }
 
 async function showReveal(result, online) {
@@ -620,7 +690,7 @@ function continueLocal() {
   if (app.view.phase !== 'ended') {
     soundCue('ready');
     maybeRunAI();
-    focusSoon(app.view.current === app.youId ? els.hand.querySelector('.card') : $('#menuBtn'));
+    focusGameSoon(app.view.current === app.youId ? els.hand.querySelector('.card') : $('#menuBtn'));
   }
 }
 
@@ -795,7 +865,7 @@ function handleOnlineMessage(message, socket) {
     render();
     if (roundStarted) {
       soundCue('ready');
-      focusSoon(message.state.current === app.youId ? els.hand.querySelector('.card') : $('#menuBtn'));
+      focusGameSoon(message.state.current === app.youId ? els.hand.querySelector('.card') : $('#menuBtn'));
     }
     if (message.state.phase === 'ended') showEnd();
     return;
@@ -910,6 +980,7 @@ function selectSettingsTab(name) {
   document.querySelectorAll('[data-settings-panel]').forEach((panel) => {
     panel.hidden = panel.dataset.settingsPanel !== name;
   });
+  $('.settings-content').scrollTop = 0;
 }
 
 function openSettings() {
@@ -986,6 +1057,7 @@ function openAnnouncement() {
   if (app.announcementReturn) app.announcementReturn.hidden = true;
   els.announcement.hidden = false;
   syncGameInert();
+  soundCue('notice');
   focusSoon($('#closeAnnouncementBtn'));
 }
 
@@ -993,6 +1065,7 @@ function closeAnnouncement() {
   els.announcement.hidden = true;
   if (app.announcementReturn) app.announcementReturn.hidden = false;
   syncGameInert();
+  soundCue('notice');
   focusSoon(app.announcementFocus);
   app.announcementFocus = null;
   app.announcementReturn = null;
@@ -1033,7 +1106,7 @@ function returnHome(closeSocket = true) {
 }
 
 function handleGameShortcut(event) {
-  if (event.defaultPrevented || event.isComposing || event.repeat || event.altKey || event.ctrlKey || event.metaKey || els.game.inert) return false;
+  if (!app.preferences.shortcuts || event.defaultPrevented || event.isComposing || event.repeat || event.altKey || event.ctrlKey || event.metaKey || els.game.inert) return false;
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target?.tagName)) return false;
   const key = event.key.toLowerCase();
   const card = /^[1-5]$/.test(key) ? els.hand.querySelector(`[data-index="${Number(key) - 1}"]`) : null;
@@ -1124,19 +1197,9 @@ els.soundEnabled.addEventListener('change', () => {
   syncSettingsControls();
   if (!app.muted) soundCue('ready');
 });
-els.masterVolume.addEventListener('input', () => {
-  app.preferences.masterVolume = Number(els.masterVolume.value) / 100;
-  syncAudioLevels();
-  syncSettingsControls();
-});
 els.musicEnabled.addEventListener('change', () => {
   app.preferences.music = els.musicEnabled.checked;
   if (app.preferences.music) startAmbience();
-  syncAudioLevels();
-  syncSettingsControls();
-});
-els.musicVolume.addEventListener('input', () => {
-  app.preferences.musicVolume = Number(els.musicVolume.value) / 100;
   syncAudioLevels();
   syncSettingsControls();
 });
@@ -1147,19 +1210,41 @@ els.sfxEnabled.addEventListener('change', () => {
   syncSettingsControls();
   if (app.preferences.sfx) soundCue('ready');
 });
-els.sfxVolume.addEventListener('input', () => {
-  app.preferences.sfxVolume = Number(els.sfxVolume.value) / 100;
-  syncAudioLevels();
-  syncSettingsControls();
-});
 els.motionEnabled.addEventListener('change', () => {
   app.preferences.motion = els.motionEnabled.checked;
   syncPreferenceClasses();
+  syncSettingsControls();
 });
 els.visualEffectsEnabled.addEventListener('change', () => {
   app.preferences.visualEffects = els.visualEffectsEnabled.checked;
   syncPreferenceClasses();
+  syncSettingsControls();
 });
+const bindRange = (element, key, decimal, update) => element.addEventListener('input', () => {
+  app.preferences[key] = Number(element.value) / (decimal ? 100 : 1);
+  update?.();
+  syncSettingsControls();
+});
+bindRange(els.masterVolume, 'masterVolume', true, syncAudioLevels);
+bindRange(els.musicVolume, 'musicVolume', true, syncAudioLevels);
+bindRange(els.sfxVolume, 'sfxVolume', true, syncAudioLevels);
+bindRange(els.ambienceIntensity, 'ambienceIntensity', false, () => { syncAudioLevels(); setAmbienceTension(app.view?.pileCount || 0, app.view?.current === app.youId); });
+bindRange(els.musicWarmth, 'musicWarmth', false, () => setAmbienceTension(app.view?.pileCount || 0, app.view?.current === app.youId));
+bindRange(els.cuePitch, 'cuePitch', false);
+['motionSpeed', 'cardScale', 'sceneBrightness', 'sceneContrast', 'particleDensity']
+  .forEach((key) => bindRange(els[key], key, false, syncPreferenceClasses));
+bindRange(els.aiSpeed, 'aiSpeed', false);
+[
+  [els.autoFocusEnabled, 'autoFocus'], [els.shortcutsEnabled, 'shortcuts'], [els.historyEnabled, 'history'],
+  [els.turnEffectsEnabled, 'turnEffects'], [els.uiSoundsEnabled, 'uiSounds'], [els.gameSoundsEnabled, 'gameSounds'],
+  [els.announcementSoundsEnabled, 'announcementSounds'],
+].forEach(([element, key]) => element.addEventListener('change', () => {
+  app.preferences[key] = element.checked;
+  syncPreferenceClasses();
+  syncSettingsControls();
+}));
+els.cuePitch.addEventListener('change', () => soundCue('select'));
+$('#resetPreferencesBtn').addEventListener('click', resetPreferences);
 els.language.addEventListener('change', () => {
   app.preferences.language = els.language.value;
   applyTranslations();

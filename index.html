@@ -115,7 +115,7 @@
       <p class="tip">JOKER 可充当任意指定牌 · 活到最后即获胜</p>
       <button id="tutorialBtn" class="version-btn tutorial-entry" type="button" aria-haspopup="dialog" data-i18n="openTutorial">开始新手教程</button>
       <button id="startSettingsBtn" class="version-btn" type="button" aria-haspopup="dialog" data-i18n="settingsTitle">游戏设置</button>
-      <button id="announcementBtn" class="version-btn" type="button" aria-haspopup="dialog">v1.4.0 · 查看本次更新</button>
+      <button id="announcementBtn" class="version-btn" type="button" aria-haspopup="dialog">v1.5.0 · 查看本次更新</button>
     </div>
   </section>
 
@@ -196,6 +196,7 @@
       <div class="settings-layout">
         <nav id="settingsTabs" class="settings-tabs" role="tablist" aria-label="设置分类">
           <button type="button" role="tab" aria-selected="true" aria-controls="settings-experience" data-settings-tab="experience" data-i18n="tabExperience">体验</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="settings-gameplay" data-settings-tab="gameplay" data-i18n="tabGameplay">辅助</button>
           <button type="button" role="tab" aria-selected="false" aria-controls="settings-sound" data-settings-tab="sound" data-i18n="tabSound">声音</button>
           <button type="button" role="tab" aria-selected="false" aria-controls="settings-language" data-settings-tab="language" data-i18n="tabLanguage">语言</button>
           <button type="button" role="tab" aria-selected="false" aria-controls="settings-news" data-settings-tab="news" data-i18n="tabNews">公告</button>
@@ -205,8 +206,21 @@
           <section id="settings-experience" class="settings-panel" role="tabpanel" data-settings-panel="experience">
             <h3 data-i18n="tabExperience">体验</h3>
             <label class="setting-row"><span><b data-i18n="motion">增强动画</b><small>启用发牌、光影与状态过渡</small></span><input id="motionEnabled" type="checkbox" role="switch" checked></label>
+            <label class="volume-row" for="motionSpeed"><span><span data-i18n="motionSpeed">动画速度</span> <output id="motionSpeedValue">100%</output></span><input id="motionSpeed" type="range" min="40" max="200" value="100"></label>
             <label class="setting-row"><span><b data-i18n="visualEffects">桌面光影</b><small>显示颗粒、浮尘与环境辉光</small></span><input id="visualEffectsEnabled" type="checkbox" role="switch" checked></label>
+            <label class="volume-row" for="sceneBrightness"><span><span data-i18n="sceneBrightness">场景亮度</span> <output id="sceneBrightnessValue">100%</output></span><input id="sceneBrightness" type="range" min="55" max="145" value="100"></label>
+            <label class="volume-row" for="sceneContrast"><span><span data-i18n="sceneContrast">场景对比度</span> <output id="sceneContrastValue">100%</output></span><input id="sceneContrast" type="range" min="70" max="150" value="100"></label>
+            <label class="volume-row" for="particleDensity"><span><span data-i18n="particles">浮尘密度</span> <output id="particleDensityValue">100%</output></span><input id="particleDensity" type="range" min="0" max="150" value="100"></label>
+            <label class="volume-row" for="cardScale"><span><span data-i18n="cardScale">手牌缩放</span> <output id="cardScaleValue">100%</output></span><input id="cardScale" type="range" min="75" max="130" value="100"></label>
             <button id="openTutorialBtn" class="setting-action" type="button"><span><b data-i18n="openTutorial">开始新手教程</b><small>重新学习出牌、质疑与左轮裁决</small></span><i>→</i></button>
+          </section>
+          <section id="settings-gameplay" class="settings-panel" role="tabpanel" data-settings-panel="gameplay" hidden>
+            <h3 data-i18n="tabGameplay">游戏辅助</h3>
+            <label class="volume-row" for="aiSpeed"><span><span data-i18n="aiSpeed">AI 思考节奏</span> <output id="aiSpeedValue">100%</output></span><input id="aiSpeed" type="range" min="50" max="250" value="100"></label>
+            <label class="setting-row"><span><b data-i18n="autoFocus">自动聚焦</b><small>开局和换局时定位到可用操作</small></span><input id="autoFocusEnabled" type="checkbox" role="switch" checked></label>
+            <label class="setting-row"><span><b data-i18n="shortcuts">键盘快捷键</b><small>数字键选牌，P 出牌，C 质疑</small></span><input id="shortcutsEnabled" type="checkbox" role="switch" checked></label>
+            <label class="setting-row"><span><b data-i18n="history">酒馆耳语</b><small>显示桌面右上角的行动记录</small></span><input id="historyEnabled" type="checkbox" role="switch" checked></label>
+            <label class="setting-row"><span><b data-i18n="turnEffects">回合强调</b><small>强调当前玩家与你的操作回合</small></span><input id="turnEffectsEnabled" type="checkbox" role="switch" checked></label>
           </section>
           <section id="settings-sound" class="settings-panel" role="tabpanel" data-settings-panel="sound" hidden>
             <h3 data-i18n="tabSound">声音</h3>
@@ -214,8 +228,14 @@
             <label class="volume-row" for="masterVolume"><span>总音量 <output id="masterVolumeValue">80%</output></span><input id="masterVolume" type="range" min="0" max="100" value="80"></label>
             <label class="setting-row"><span><b data-i18n="music">环境音乐</b><small>酒馆低吟、壁炉与紧张氛围</small></span><input id="musicEnabled" type="checkbox" role="switch" checked></label>
             <label class="volume-row" for="musicVolume"><span>音乐音量 <output id="musicVolumeValue">70%</output></span><input id="musicVolume" type="range" min="0" max="100" value="70"></label>
+            <label class="volume-row" for="ambienceIntensity"><span><span data-i18n="ambienceIntensity">氛围强度</span> <output id="ambienceIntensityValue">100%</output></span><input id="ambienceIntensity" type="range" min="0" max="150" value="100"></label>
+            <label class="volume-row" for="musicWarmth"><span><span data-i18n="musicWarmth">环境音温暖度</span> <output id="musicWarmthValue">55%</output></span><input id="musicWarmth" type="range" min="0" max="100" value="55"></label>
             <label class="setting-row"><span><b data-i18n="soundEffects">操作音效</b><small>选牌、质疑、转轮和击发反馈</small></span><input id="sfxEnabled" type="checkbox" role="switch" checked></label>
             <label class="volume-row" for="sfxVolume"><span>音效音量 <output id="sfxVolumeValue">85%</output></span><input id="sfxVolume" type="range" min="0" max="100" value="85"></label>
+            <label class="volume-row" for="cuePitch"><span><span data-i18n="cuePitch">提示音音高</span> <output id="cuePitchValue">100%</output></span><input id="cuePitch" type="range" min="70" max="130" value="100"></label>
+            <label class="setting-row"><span><b data-i18n="uiSounds">界面提示音</b><small>设置、教程、选项与纸页反馈</small></span><input id="uiSoundsEnabled" type="checkbox" role="switch" checked></label>
+            <label class="setting-row"><span><b data-i18n="gameSounds">牌局提示音</b><small>出牌、质疑、转轮、空膛与击发</small></span><input id="gameSoundsEnabled" type="checkbox" role="switch" checked></label>
+            <label class="setting-row"><span><b data-i18n="announcementSounds">公告提示音</b><small>打开和关闭更新公告时播放反馈</small></span><input id="announcementSoundsEnabled" type="checkbox" role="switch" checked></label>
           </section>
           <section id="settings-language" class="settings-panel" role="tabpanel" data-settings-panel="language" hidden>
             <h3 data-i18n="language">界面语言</h3>
@@ -226,7 +246,7 @@
           </section>
           <section id="settings-news" class="settings-panel" role="tabpanel" data-settings-panel="news" hidden>
             <h3 data-i18n="news">最新公告</h3>
-            <article class="settings-release"><small>2026-07-27</small><b>v1.4.0 · 酒馆焕新</b><p>新增设置中心、十种语言、新手教程、分轨音频与更丰富的界面动画。</p></article>
+            <article class="settings-release"><small>2026-07-27</small><b>v1.5.0 · 随心调校</b><p>新增 20 项可调参数，扩展视觉、AI 节奏、BGM、SFX 与辅助设置。</p></article>
             <button id="settingsAnnouncementBtn" class="setting-action" type="button"><span><b>查看完整更新公告</b><small>阅读本次更新与历史版本</small></span><i>→</i></button>
           </section>
           <section id="settings-about" class="settings-panel" role="tabpanel" data-settings-panel="about" hidden>
@@ -242,7 +262,10 @@
           </section>
         </div>
       </div>
-      <button id="settingsDoneBtn" class="primary-btn compact" type="button" data-i18n="done">完成</button>
+      <div class="settings-footer">
+        <button id="resetPreferencesBtn" class="secondary-btn compact" type="button" data-i18n="resetDefaults">恢复默认</button>
+        <button id="settingsDoneBtn" class="primary-btn compact" type="button" data-i18n="done">完成</button>
+      </div>
     </div>
   </section>
 
@@ -282,16 +305,17 @@
     <div class="panel-card announcement-card">
       <button id="closeAnnouncementBtn" class="close-btn" type="button" aria-label="关闭更新公告"><svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
       <p class="eyebrow">更新公告</p>
-      <h2 id="announcementTitle">v1.4.0 · 酒馆焕新</h2>
+      <h2 id="announcementTitle">v1.5.0 · 随心调校</h2>
       <p class="release-date">2026-07-27</p>
       <ul>
-        <li>新增体验、声音、语言、公告与关于五分区设置中心。</li>
-        <li>新增 10 种界面语言与四步新手教程，支持即时切换。</li>
-        <li>重构总音量、环境音乐与操作音效分轨控制，修正静音和后台输出。</li>
-        <li>加入发牌、浮尘、面板、回合与教程动画，并保留减少动态效果选项。</li>
+        <li>设置中心扩展为六分区，提供 20 项可调参数与一键恢复默认。</li>
+        <li>动画速度、手牌缩放、亮度、对比度与粒子密度支持大范围实时调节。</li>
+        <li>新增 AI 思考节奏、自动聚焦、快捷键、行动历史与回合强调开关。</li>
+        <li>扩展 BGM 氛围强度和音色，并将界面、牌局、公告 SFX 分别控制。</li>
       </ul>
       <details>
         <summary>历史公告</summary>
+        <article><b>v1.4.0 · 酒馆焕新</b><time>2026-07-27</time><p>新增设置中心、10 种语言、新手教程、分轨音频与界面动画。</p></article>
         <article><b>v1.3.1 · 稳住氛围</b><time>2026-07-26</time><p>修正桌面牌数、静音输出、换局提示与极窄屏焦点。</p></article>
         <article><b>v1.3.0 · 酒客留名</b><time>2026-07-26</time><p>新增酒客档案、动态称号与声名刻度，并让环境声随牌局压力变化。</p></article>
         <article><b>v1.2.0 · 沉浸酒桌</b><time>2026-07-24</time><p>强化牌桌反馈、程序化音效与环境音乐，并完善移动端和短横屏体验。</p></article>
