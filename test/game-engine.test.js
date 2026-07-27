@@ -100,3 +100,16 @@ test('starts a fresh round after reveal and ends with one survivor', () => {
   assert.equal(engine.phase, 'ended');
   assert.equal(engine.winner, 'a');
 });
+
+test('preserves the completed result when the winner disconnects', () => {
+  const engine = game(2);
+  engine.players[1].alive = false;
+  engine.finish();
+
+  engine.forfeit('a');
+
+  assert.equal(engine.phase, 'ended');
+  assert.equal(engine.winner, 'a');
+  assert.equal(engine.player('a').alive, true);
+  assert.equal(engine.player('a').connected, false);
+});

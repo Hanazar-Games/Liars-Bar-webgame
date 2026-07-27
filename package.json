@@ -1,6 +1,6 @@
 {
   "name": "liars-table",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "支持单人 AI 与局域网联机的骗子酒馆网页游戏",
   "private": true,
   "license": "MIT",

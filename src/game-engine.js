@@ -167,11 +167,12 @@ export class GameEngine {
 
   forfeit(id) {
     const player = this.player(id);
-    if (!player.connected && !player.alive) return;
+    if (!player.connected) return;
     player.connected = false;
-    player.alive = false;
     player.hand = [];
     this.log(`${player.name} 已断开连接并离席`);
+    if (this.phase === 'ended') return;
+    player.alive = false;
 
     if (this.lastPlay?.player === id) this.lastPlay = null;
     if (this.alivePlayers().length <= 1) {

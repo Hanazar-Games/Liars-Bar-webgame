@@ -17,6 +17,7 @@ const STATIC_FILES = new Map([
   ['/game.js', ['game.js', 'text/javascript; charset=utf-8']],
   ['/src/game-engine.js', ['src/game-engine.js', 'text/javascript; charset=utf-8']],
   ['/src/guest-profile.js', ['src/guest-profile.js', 'text/javascript; charset=utf-8']],
+  ['/src/i18n.js', ['src/i18n.js', 'text/javascript; charset=utf-8']],
   ['/assets/tavern-bg.png', ['assets/tavern-bg.png', 'image/png']],
 ]);
 
@@ -273,7 +274,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const gameServer = createGameServer();
   try {
     const address = await gameServer.start();
-    console.log('骗子酒馆 v1.3.1 已启动：');
+    console.log('骗子酒馆 v1.4.0 已启动：');
     lanUrls(address.port).forEach((url) => console.log(`  ${url}`));
 
     const shutdown = async () => {

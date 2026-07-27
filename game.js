@@ -1,5 +1,6 @@
 import { CARD_NAMES, GameEngine, shuffle } from './src/game-engine.js';
 import { createGuestProfile, describeGuest, recordChallenge, recordClaim, syncSurvivedRounds } from './src/guest-profile.js';
+import { translate } from './src/i18n.js';
 
 const $ = (selector) => document.querySelector(selector);
 const AI_PLAYERS = [
@@ -30,6 +31,13 @@ const els = {
   endProfileSummary: $('#endProfileSummary'),
   modeBadge: $('#modeBadge'), youLabel: $('#youLabel'), connectionHint: $('#connectionHint'),
   createRoom: $('#createRoomBtn'), joinRoom: $('#joinRoomBtn'), backMode: $('#backModeBtn'),
+  settings: $('#settingsOverlay'), settingsButton: $('#settingsBtn'), settingsTabs: $('#settingsTabs'),
+  tutorial: $('#tutorialOverlay'), tutorialTitle: $('#tutorialTitle'), tutorialCopy: $('#tutorialCopy'),
+  tutorialProgress: $('#tutorialProgress'), tutorialVisual: $('#tutorialVisual'), tutorialDots: $('#tutorialDots'),
+  tutorialBack: $('#tutorialBackBtn'), tutorialNext: $('#tutorialNextBtn'), language: $('#languageSelect'),
+  soundEnabled: $('#soundEnabled'), masterVolume: $('#masterVolume'), musicEnabled: $('#musicEnabled'),
+  musicVolume: $('#musicVolume'), sfxEnabled: $('#sfxEnabled'), sfxVolume: $('#sfxVolume'),
+  motionEnabled: $('#motionEnabled'), visualEffectsEnabled: $('#visualEffectsEnabled'),
 };
 
 const app = {
@@ -50,11 +58,24 @@ const app = {
   connectionTimer: null,
   connecting: false,
   lastFocus: null,
+  settingsFocus: null,
+  settingsReturn: null,
+  tutorialFocus: null,
   announcementReturn: null,
+  announcementFocus: null,
   profileData: createGuestProfile(),
   profileActive: false,
   pendingClaim: null,
+  animateDeal: false,
+  tutorialStep: 0,
+  tutorialReturn: null,
+  preferences: {
+    language: 'zh-CN', motion: true, visualEffects: true,
+    masterVolume: .8, music: true, musicVolume: .7, sfx: true, sfxVolume: .85,
+  },
 };
+
+const t = (key, values) => translate(app.preferences.language, key, values);
 
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;',
@@ -66,6 +87,7 @@ const playerName = (id) => app.view?.players.find((player) => player.id === id)?
 let audio;
 let audioBus;
 let masterGain;
+let sfxGain;
 let ambience;
 const AMBIENCE_VOLUME = .005;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -77,10 +99,13 @@ function ensureAudio() {
     if (!audioBus) {
       audioBus = audio.createDynamicsCompressor();
       masterGain = audio.createGain();
+      sfxGain = audio.createGain();
       audioBus.threshold.value = -18;
       audioBus.knee.value = 12;
       audioBus.ratio.value = 5;
-      masterGain.gain.value = 1;
+      masterGain.gain.value = app.preferences.masterVolume;
+      sfxGain.gain.value = app.preferences.sfxVolume;
+      sfxGain.connect(audioBus);
       audioBus.connect(masterGain).connect(audio.destination);
     }
     if (audio.state === 'suspended') audio.resume().catch(() => {});
@@ -91,7 +116,7 @@ function ensureAudio() {
 }
 
 function tone(freq = 220, duration = .08, type = 'sine', volume = .035, delay = 0) {
-  if (document.hidden) return;
+  if (document.hidden || !app.preferences.sfx) return;
   const context = ensureAudio();
   if (!context) return;
   const oscillator = context.createOscillator();
@@ -102,14 +127,14 @@ function tone(freq = 220, duration = .08, type = 'sine', volume = .035, delay = 
   gain.gain.setValueAtTime(.0001, now);
   gain.gain.exponentialRampToValueAtTime(volume, now + Math.min(.008, duration / 3));
   gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
-  oscillator.connect(gain).connect(audioBus);
+  oscillator.connect(gain).connect(sfxGain);
   oscillator.addEventListener('ended', () => { oscillator.disconnect(); gain.disconnect(); });
   oscillator.start(now);
   oscillator.stop(now + duration + .01);
 }
 
 function noiseBurst(duration = .06, volume = .02, frequency = 1200, delay = 0) {
-  if (document.hidden) return;
+  if (document.hidden || !app.preferences.sfx) return;
   const context = ensureAudio();
   if (!context) return;
   const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
@@ -125,7 +150,7 @@ function noiseBurst(duration = .06, volume = .02, frequency = 1200, delay = 0) {
   gain.gain.setValueAtTime(.0001, now);
   gain.gain.exponentialRampToValueAtTime(volume, now + Math.min(.006, duration / 3));
   gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
-  source.connect(filter).connect(gain).connect(audioBus);
+  source.connect(filter).connect(gain).connect(sfxGain);
   source.addEventListener('ended', () => { source.disconnect(); filter.disconnect(); gain.disconnect(); });
   source.start(now);
 }
@@ -165,7 +190,7 @@ function startAmbience() {
   const fireGain = context.createGain();
   const lfo = context.createOscillator();
   const lfoGain = context.createGain();
-  gain.gain.value = app.muted ? 0 : AMBIENCE_VOLUME;
+  gain.gain.value = 0;
   mix.gain.value = .62;
   filter.type = 'lowpass';
   filter.frequency.value = 260;
@@ -184,6 +209,7 @@ function startAmbience() {
   fire.start();
   lfo.start();
   ambience = { gain, filter, mix, fire, fireGain, oscillators, lfo };
+  syncAudioLevels();
   setAmbienceTension(app.view?.pileCount || 0, app.view?.current === app.youId);
 }
 
@@ -195,13 +221,21 @@ function setAmbienceTension(pileCount = 0, yourTurn = false) {
   ambience.fireGain.gain.setTargetAtTime(.1 + tension * .04, audio.currentTime, .7);
 }
 
+function syncAudioLevels() {
+  if (!audio) return;
+  const audible = !app.muted && !document.hidden;
+  masterGain?.gain.setTargetAtTime(audible ? app.preferences.masterVolume : 0, audio.currentTime, .03);
+  sfxGain?.gain.setTargetAtTime(app.preferences.sfx ? app.preferences.sfxVolume : 0, audio.currentTime, .03);
+  ambience?.gain.gain.setTargetAtTime(audible && app.preferences.music ? AMBIENCE_VOLUME * app.preferences.musicVolume : 0, audio.currentTime, .08);
+}
+
 function setSound(enabled) {
   app.muted = !enabled;
   els.sound.querySelector('use').setAttribute('href', enabled ? '#icon-volume-on' : '#icon-volume-off');
   els.sound.setAttribute('aria-pressed', String(enabled));
   els.sound.setAttribute('aria-label', enabled ? '关闭声音与环境音乐' : '开启声音与环境音乐');
   if (enabled) startAmbience();
-  if (masterGain && audio) masterGain.gain.setTargetAtTime(enabled && !document.hidden ? 1 : 0, audio.currentTime, .03);
+  syncAudioLevels();
 }
 
 function toast(message) {
@@ -216,8 +250,55 @@ function focusSoon(element) {
 }
 
 function syncGameInert() {
-  els.game.inert = [els.start, els.lobby, els.reveal, els.end, els.menu, els.profile, els.announcement]
+  els.game.inert = [els.start, els.lobby, els.reveal, els.end, els.menu, els.profile, els.settings, els.tutorial, els.announcement]
     .some((overlay) => !overlay.hidden);
+}
+
+function applyTranslations() {
+  document.documentElement.lang = app.preferences.language;
+  document.querySelectorAll('[data-i18n]').forEach((element) => {
+    element.textContent = t(element.dataset.i18n);
+  });
+  renderTutorial();
+  render();
+}
+
+function syncPreferenceClasses() {
+  document.body.classList.toggle('calm-motion', !app.preferences.motion);
+  document.body.classList.toggle('visual-effects-off', !app.preferences.visualEffects);
+}
+
+function syncSettingsControls() {
+  els.soundEnabled.checked = !app.muted;
+  els.masterVolume.value = Math.round(app.preferences.masterVolume * 100);
+  els.musicEnabled.checked = app.preferences.music;
+  els.musicVolume.value = Math.round(app.preferences.musicVolume * 100);
+  els.sfxEnabled.checked = app.preferences.sfx;
+  els.sfxVolume.value = Math.round(app.preferences.sfxVolume * 100);
+  els.motionEnabled.checked = app.preferences.motion;
+  els.visualEffectsEnabled.checked = app.preferences.visualEffects;
+  els.language.value = app.preferences.language;
+  $('#masterVolumeValue').textContent = `${els.masterVolume.value}%`;
+  $('#musicVolumeValue').textContent = `${els.musicVolume.value}%`;
+  $('#sfxVolumeValue').textContent = `${els.sfxVolume.value}%`;
+  els.masterVolume.disabled = app.muted;
+  els.musicVolume.disabled = !app.preferences.music;
+  els.sfxVolume.disabled = !app.preferences.sfx;
+}
+
+const TUTORIAL_STEPS = Array.from({ length: 4 }, (_, index) => ({
+  title: `tutorial${index + 1}Title`, copy: `tutorial${index + 1}Copy`,
+}));
+
+function renderTutorial() {
+  const step = TUTORIAL_STEPS[app.tutorialStep];
+  els.tutorialTitle.textContent = t(step.title);
+  els.tutorialCopy.textContent = t(step.copy);
+  els.tutorialProgress.textContent = t('tutorialProgress', { current: app.tutorialStep + 1, total: TUTORIAL_STEPS.length });
+  els.tutorialVisual.dataset.step = app.tutorialStep;
+  els.tutorialDots.innerHTML = TUTORIAL_STEPS.map((_, index) => `<i class="${index === app.tutorialStep ? 'active' : ''}"></i>`).join('');
+  els.tutorialBack.disabled = app.tutorialStep === 0;
+  els.tutorialNext.textContent = t(app.tutorialStep === TUTORIAL_STEPS.length - 1 ? 'finish' : 'next');
 }
 
 function renderProfile() {
@@ -318,7 +399,7 @@ function renderOpponents(opponents, view) {
   els.players.innerHTML = opponents.map((player, index) => {
     const cards = Array.from({ length: player.handCount }, () => '<i class="mini-card"></i>').join('');
     const chambers = Array.from({ length: 6 }, (_, chamber) => `<span class="${chamber < player.shots ? 'used' : ''}"></span>`).join('');
-    const status = !player.connected ? '已断开连接' : player.alive ? `${player.handCount} 张牌 · 弹巢 ${player.shots}/6` : '已离席';
+    const status = !player.connected ? '已断开连接' : !player.alive ? '已淘汰' : player.handCount ? `${player.handCount} 张牌 · 弹巢 ${player.shots}/6` : `手牌已出尽 · 弹巢 ${player.shots}/6`;
     return `<article class="opponent ${!player.alive ? 'dead' : ''} ${view.current === player.id && view.phase === 'playing' ? 'active' : ''}" data-seat="${index + 1}" data-total="${opponents.length}">
       <div class="avatar-ring"><div class="avatar">${escapeHtml(player.avatar)}</div><i class="turn-dot"></i></div>
       <div class="name">${escapeHtml(player.name)}</div><div class="status">${status}</div>
@@ -330,21 +411,25 @@ function renderOpponents(opponents, view) {
 function renderHand(me, view) {
   const hand = me?.hand || [];
   const myTurn = view.current === app.youId && view.phase === 'playing' && !app.busy && !app.paused && me?.alive;
+  const dealing = app.animateDeal && app.preferences.motion && !reducedMotion.matches;
   els.hand.innerHTML = hand.map((rank, index) => {
     const selected = app.selected.has(index);
     const red = rank === 'Q' ? 'red' : '';
     const rotation = (index - (hand.length - 1) / 2) * 3;
     const label = `${CARD_NAMES[rank]}，第 ${index + 1} 张${selected ? '，已选择' : ''}`;
-    return `<button class="card ${rank === 'JOKER' ? 'joker' : ''} ${red} ${selected ? 'selected' : ''}" type="button" data-index="${index}" style="--rot:${rotation}deg" aria-label="${label}" aria-pressed="${selected}" ${myTurn ? '' : 'disabled'}>
+    return `<button class="card ${rank === 'JOKER' ? 'joker' : ''} ${red} ${selected ? 'selected' : ''} ${dealing ? 'dealing' : ''}" type="button" data-index="${index}" style="--rot:${rotation}deg;--delay:${index * 55}ms" aria-label="${label}" aria-keyshortcuts="${index + 1}" aria-pressed="${selected}" ${myTurn ? '' : 'disabled'}>
       <span class="corner">${rank === 'JOKER' ? '★' : rank}</span><span class="suit">${rank === 'Q' ? '♥' : rank === 'K' ? '♣' : rank === 'A' ? '♠' : '✦'}</span><span class="face">${rank === 'JOKER' ? 'J' : rank}</span>
     </button>`;
   }).join('');
   els.hand.querySelectorAll('.card').forEach((card) => card.addEventListener('click', (event) => {
     toggleCard(Number(card.dataset.index), event.detail === 0);
   }));
+  app.animateDeal = false;
 }
 
 function renderPile(count) {
+  if (els.pile.dataset.count === String(count)) return;
+  els.pile.dataset.count = count;
   if (!count) {
     els.pile.innerHTML = '<div class="empty-pile">等待出牌</div>';
     return;
@@ -372,7 +457,7 @@ function renderControls(me, view) {
   els.challengeText.textContent = previous ? `揭穿 ${previous.name} 的 ${view.lastPlay.count} 张牌` : '尚无可质疑出牌';
   els.selectionHint.textContent = app.selected.size
     ? `已选择 ${app.selected.size} 张 · 将宣称为 ${view.target}`
-    : myTurn ? !me.handCount && view.lastPlay ? '手牌已出尽，只能质疑上一手' : view.lastPlay ? '继续出牌，或质疑上一手' : '选择 1–3 张牌' : me?.alive ? '等待轮到你' : '你已离席，正在旁观';
+    : myTurn ? !me.handCount && view.lastPlay ? '手牌已出尽，只能质疑上一手' : view.lastPlay ? '继续出牌，或质疑上一手' : '选择 1–3 张牌' : me?.alive ? '等待轮到你' : '你已被淘汰，正在旁观';
   els.play.disabled = !myTurn || app.selected.size < 1 || app.selected.size > 3;
   els.challenge.disabled = !myTurn || !view.lastPlay;
   const current = view.players.find((player) => player.id === view.current);
@@ -411,6 +496,7 @@ function startSolo() {
   app.busy = false;
   app.paused = false;
   app.profileActive = true;
+  app.animateDeal = true;
   resetProfile();
   app.engine = new GameEngine([{ id: 'you', name: '你', avatar: '♠' }, ...AI_PLAYERS]);
   app.engine.start();
@@ -418,6 +504,7 @@ function startSolo() {
   showGame();
   refreshLocal();
   soundCue('ready');
+  focusSoon(app.view.current === app.youId ? els.hand.querySelector('.card') : $('#menuBtn'));
   maybeRunAI();
 }
 
@@ -465,8 +552,10 @@ function maybeRunAI() {
 
 async function showReveal(result, online) {
   const sequence = ++app.revealSequence;
-  els.menu.hidden = true;
-  els.profile.hidden = true;
+  [els.menu, els.profile, els.settings, els.tutorial, els.announcement].forEach((overlay) => { overlay.hidden = true; });
+  app.tutorialReturn = null;
+  app.settingsReturn = null;
+  app.announcementReturn = null;
   app.paused = false;
   app.lastFocus = document.activeElement;
   els.reveal.hidden = false;
@@ -526,6 +615,7 @@ function continueLocal() {
   app.engine.nextRound();
   app.selected.clear();
   app.busy = false;
+  app.animateDeal = app.engine.phase === 'playing';
   refreshLocal();
   if (app.view.phase !== 'ended') {
     soundCue('ready');
@@ -672,7 +762,7 @@ function handleOnlineMessage(message, socket) {
   }
   if (message.type === 'game-state') {
     const roundStarted = message.state.phase === 'playing' && message.state.round !== app.view?.round;
-    const closingReveal = message.state.phase === 'playing' && !els.reveal.hidden;
+    if (roundStarted) app.animateDeal = true;
     const startingMatch = !app.profileActive || (message.state.round === 1 && app.view?.phase === 'ended');
     if (startingMatch) {
       app.profileActive = true;
@@ -703,8 +793,10 @@ function handleOnlineMessage(message, socket) {
       els.reveal.hidden = true;
     }
     render();
-    if (roundStarted) soundCue('ready');
-    if (closingReveal) focusSoon(message.state.current === app.youId ? els.hand.querySelector('.card') : $('#menuBtn'));
+    if (roundStarted) {
+      soundCue('ready');
+      focusSoon(message.state.current === app.youId ? els.hand.querySelector('.card') : $('#menuBtn'));
+    }
     if (message.state.phase === 'ended') showEnd();
     return;
   }
@@ -740,12 +832,15 @@ function showEnd() {
   const opening = els.end.hidden;
   const winner = app.view.players.find((player) => player.id === app.view.winner);
   const won = winner?.id === app.youId;
-  els.endTitle.textContent = won ? '你活了下来' : `${winner?.name || '无人'} 获胜`;
-  els.endCopy.textContent = won ? `历经 ${app.view.round} 局，你成为最后仍坐在桌前的人。` : `牌局在第 ${app.view.round} 局落幕。酒馆记住了最后的赢家。`;
   const online = app.mode === 'online';
   const host = online && app.room?.hostId === app.youId;
-  els.menu.hidden = true;
-  els.profile.hidden = true;
+  els.endTitle.textContent = won ? '你活了下来' : `${winner?.name || '无人'} 获胜`;
+  const result = won ? `历经 ${app.view.round} 局，你成为最后仍坐在桌前的人。` : `牌局在第 ${app.view.round} 局落幕。酒馆记住了最后的赢家。`;
+  els.endCopy.textContent = `${result}${online && !host ? ' 可等待房主再开一桌，或返回首页。' : ''}`;
+  [els.menu, els.profile, els.settings, els.tutorial, els.announcement].forEach((overlay) => { overlay.hidden = true; });
+  app.tutorialReturn = null;
+  app.settingsReturn = null;
+  app.announcementReturn = null;
   app.paused = false;
   els.restart.hidden = online && !host;
   els.restart.disabled = false;
@@ -806,9 +901,88 @@ function closeProfile() {
   maybeRunAI();
 }
 
+function selectSettingsTab(name) {
+  document.querySelectorAll('[data-settings-tab]').forEach((tab) => {
+    const selected = tab.dataset.settingsTab === name;
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+  });
+  document.querySelectorAll('[data-settings-panel]').forEach((panel) => {
+    panel.hidden = panel.dataset.settingsPanel !== name;
+  });
+}
+
+function openSettings() {
+  app.settingsFocus = document.activeElement;
+  app.settingsReturn = !els.start.hidden ? els.start : !els.lobby.hidden ? els.lobby : null;
+  if (app.settingsReturn) app.settingsReturn.hidden = true;
+  app.paused = app.mode === 'solo';
+  clearTimeout(app.aiTimer);
+  if (app.mode === 'online') toast('联机牌局不会暂停');
+  syncSettingsControls();
+  els.settings.hidden = false;
+  syncGameInert();
+  soundCue('paper');
+  focusSoon($('#closeSettingsBtn'));
+}
+
+function closeSettings() {
+  els.settings.hidden = true;
+  if (app.settingsReturn) app.settingsReturn.hidden = false;
+  app.settingsReturn = null;
+  syncGameInert();
+  app.paused = false;
+  soundCue('paper');
+  focusSoon(app.settingsFocus);
+  app.settingsFocus = null;
+  maybeRunAI();
+}
+
+function openTutorial() {
+  app.tutorialFocus = document.activeElement;
+  app.tutorialReturn = !els.settings.hidden ? els.settings : !els.start.hidden ? els.start : !els.lobby.hidden ? els.lobby : null;
+  if (app.tutorialReturn) app.tutorialReturn.hidden = true;
+  if (app.mode === 'solo') {
+    app.paused = true;
+    clearTimeout(app.aiTimer);
+  }
+  app.tutorialStep = 0;
+  renderTutorial();
+  els.tutorial.hidden = false;
+  syncGameInert();
+  soundCue('paper');
+  focusSoon($('#closeTutorialBtn'));
+}
+
+function closeTutorial() {
+  els.tutorial.hidden = true;
+  if (app.tutorialReturn) app.tutorialReturn.hidden = false;
+  const returnsToSettings = app.tutorialReturn === els.settings;
+  app.tutorialReturn = null;
+  syncGameInert();
+  soundCue('paper');
+  focusSoon(app.tutorialFocus);
+  app.tutorialFocus = null;
+  if (!returnsToSettings) {
+    app.paused = false;
+    maybeRunAI();
+  }
+}
+
+function moveTutorial(direction) {
+  const next = app.tutorialStep + direction;
+  if (next >= TUTORIAL_STEPS.length) return closeTutorial();
+  if (next < 0) return;
+  app.tutorialStep = next;
+  renderTutorial();
+  soundCue('select');
+  focusSoon(direction > 0 ? els.tutorialNext : els.tutorialBack);
+}
+
 function openAnnouncement() {
   if (app.connecting) return toast('请等待联机连接完成后再查看公告');
-  app.announcementReturn = !els.start.hidden ? els.start : !els.lobby.hidden ? els.lobby : null;
+  app.announcementFocus = document.activeElement;
+  app.announcementReturn = !els.settings.hidden ? els.settings : !els.start.hidden ? els.start : !els.lobby.hidden ? els.lobby : null;
   if (app.announcementReturn) app.announcementReturn.hidden = true;
   els.announcement.hidden = false;
   syncGameInert();
@@ -819,7 +993,8 @@ function closeAnnouncement() {
   els.announcement.hidden = true;
   if (app.announcementReturn) app.announcementReturn.hidden = false;
   syncGameInert();
-  focusSoon($('#announcementBtn'));
+  focusSoon(app.announcementFocus);
+  app.announcementFocus = null;
   app.announcementReturn = null;
 }
 
@@ -842,8 +1017,11 @@ function returnHome(closeSocket = true) {
   app.busy = false;
   app.paused = false;
   app.profileActive = false;
+  app.settingsReturn = null;
+  app.tutorialReturn = null;
+  app.announcementReturn = null;
   resetProfile();
-  [els.lobby, els.reveal, els.end, els.menu, els.profile, els.announcement].forEach((overlay) => { overlay.hidden = true; });
+  [els.lobby, els.reveal, els.end, els.menu, els.profile, els.settings, els.tutorial, els.announcement].forEach((overlay) => { overlay.hidden = true; });
   els.start.hidden = false;
   els.modeChooser.hidden = false;
   els.lanPanel.hidden = true;
@@ -852,6 +1030,18 @@ function returnHome(closeSocket = true) {
   els.modeBadge.querySelector('span').textContent = '未入座';
   render();
   focusSoon($('#soloBtn'));
+}
+
+function handleGameShortcut(event) {
+  if (event.defaultPrevented || event.isComposing || event.repeat || event.altKey || event.ctrlKey || event.metaKey || els.game.inert) return false;
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target?.tagName)) return false;
+  const key = event.key.toLowerCase();
+  const card = /^[1-5]$/.test(key) ? els.hand.querySelector(`[data-index="${Number(key) - 1}"]`) : null;
+  const action = key === 'c' ? els.challenge : key === 'p' ? els.play : card;
+  if (!action || action.disabled) return false;
+  event.preventDefault();
+  action.click();
+  return true;
 }
 
 els.play.addEventListener('click', playSelected);
@@ -895,6 +1085,32 @@ $('#resumeBtn').addEventListener('click', closeMenu);
 els.profileButton.addEventListener('click', openProfile);
 $('#closeProfileBtn').addEventListener('click', closeProfile);
 $('#profileDoneBtn').addEventListener('click', closeProfile);
+els.settingsButton.addEventListener('click', openSettings);
+$('#startSettingsBtn').addEventListener('click', openSettings);
+$('#closeSettingsBtn').addEventListener('click', closeSettings);
+$('#settingsDoneBtn').addEventListener('click', closeSettings);
+els.settingsTabs.addEventListener('click', (event) => {
+  const tab = event.target.closest('[data-settings-tab]');
+  if (!tab) return;
+  selectSettingsTab(tab.dataset.settingsTab);
+  soundCue('select');
+});
+els.settingsTabs.addEventListener('keydown', (event) => {
+  if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+  const tabs = [...els.settingsTabs.querySelectorAll('[data-settings-tab]')];
+  const current = tabs.indexOf(document.activeElement);
+  const direction = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : -1;
+  const next = tabs[(current + direction + tabs.length) % tabs.length];
+  event.preventDefault();
+  selectSettingsTab(next.dataset.settingsTab);
+  next.focus();
+});
+$('#tutorialBtn').addEventListener('click', openTutorial);
+$('#openTutorialBtn').addEventListener('click', openTutorial);
+$('#closeTutorialBtn').addEventListener('click', closeTutorial);
+els.tutorialBack.addEventListener('click', () => moveTutorial(-1));
+els.tutorialNext.addEventListener('click', () => moveTutorial(1));
+$('#settingsAnnouncementBtn').addEventListener('click', openAnnouncement);
 $('#announcementBtn').addEventListener('click', openAnnouncement);
 $('#closeAnnouncementBtn').addEventListener('click', closeAnnouncement);
 $('#announcementDoneBtn').addEventListener('click', closeAnnouncement);
@@ -903,21 +1119,70 @@ els.sound.addEventListener('click', () => {
   toast(app.muted ? '声音与环境音乐已关闭' : '声音与环境音乐已开启');
   if (!app.muted) soundCue('ready');
 });
+els.soundEnabled.addEventListener('change', () => {
+  setSound(els.soundEnabled.checked);
+  syncSettingsControls();
+  if (!app.muted) soundCue('ready');
+});
+els.masterVolume.addEventListener('input', () => {
+  app.preferences.masterVolume = Number(els.masterVolume.value) / 100;
+  syncAudioLevels();
+  syncSettingsControls();
+});
+els.musicEnabled.addEventListener('change', () => {
+  app.preferences.music = els.musicEnabled.checked;
+  if (app.preferences.music) startAmbience();
+  syncAudioLevels();
+  syncSettingsControls();
+});
+els.musicVolume.addEventListener('input', () => {
+  app.preferences.musicVolume = Number(els.musicVolume.value) / 100;
+  syncAudioLevels();
+  syncSettingsControls();
+});
+els.sfxEnabled.addEventListener('change', () => {
+  app.preferences.sfx = els.sfxEnabled.checked;
+  if (app.preferences.sfx) ensureAudio();
+  syncAudioLevels();
+  syncSettingsControls();
+  if (app.preferences.sfx) soundCue('ready');
+});
+els.sfxVolume.addEventListener('input', () => {
+  app.preferences.sfxVolume = Number(els.sfxVolume.value) / 100;
+  syncAudioLevels();
+  syncSettingsControls();
+});
+els.motionEnabled.addEventListener('change', () => {
+  app.preferences.motion = els.motionEnabled.checked;
+  syncPreferenceClasses();
+});
+els.visualEffectsEnabled.addEventListener('change', () => {
+  app.preferences.visualEffects = els.visualEffectsEnabled.checked;
+  syncPreferenceClasses();
+});
+els.language.addEventListener('change', () => {
+  app.preferences.language = els.language.value;
+  applyTranslations();
+  soundCue('select');
+});
 document.addEventListener('visibilitychange', () => {
-  if (masterGain && audio) masterGain.gain.setTargetAtTime(!document.hidden && !app.muted ? 1 : 0, audio.currentTime, .03);
+  syncAudioLevels();
 });
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     if (!els.announcement.hidden) closeAnnouncement();
+    else if (!els.tutorial.hidden) closeTutorial();
+    else if (!els.settings.hidden) closeSettings();
     else if (!els.profile.hidden) closeProfile();
     else if (!els.menu.hidden) closeMenu();
     return;
   }
+  if (handleGameShortcut(event)) return;
   if (event.key !== 'Tab') return;
   const overlays = [...document.querySelectorAll('.overlay:not([hidden])')];
   const modal = overlays.at(-1);
   if (!modal) return;
-  const focusable = [...modal.querySelectorAll('button, input, summary, [tabindex]')]
+  const focusable = [...modal.querySelectorAll('button, input, select, a[href], summary, [tabindex]')]
     .filter((element) => !element.disabled && !element.closest('[hidden]') && element.tabIndex >= 0);
   if (!focusable.length) {
     event.preventDefault();
@@ -935,3 +1200,7 @@ document.addEventListener('keydown', (event) => {
 });
 
 returnHome(false);
+selectSettingsTab('experience');
+syncPreferenceClasses();
+syncSettingsControls();
+applyTranslations();

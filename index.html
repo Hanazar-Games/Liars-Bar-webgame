@@ -23,6 +23,7 @@
       <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5m5-5-5 5 5 5"/></symbol>
       <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
       <symbol id="icon-profile" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="9" r="2.5"/><path d="M8.5 16c.8-2 2-3 3.5-3s2.7 1 3.5 3M8 6h1m6 12h1"/></symbol>
+      <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7-.7-1.7.9-1.9-2.1-2.1-1.9.9-1.7-.7-.7-2h-3l-.7 2-1.7.7-1.9-.9-2.1 2.1.9 1.9-.7 1.7-2 .7v3l2 .7.7 1.7-.9 1.9 2.1 2.1 1.9-.9 1.7.7.7 2h3l.7-2 1.7-.7 1.9.9 2.1-2.1-.9-1.9.7-1.7 2-.7Z"/></symbol>
     </defs>
   </svg>
 
@@ -34,6 +35,7 @@
       <div class="round-info"><span>第 <b id="roundNo">0</b> 局</span><i></i><span>桌面 <b id="pileCount">0</b></span></div>
       <button id="profileBtn" class="icon-btn" type="button" aria-label="查看酒客档案" aria-haspopup="dialog"><svg class="ui-icon" aria-hidden="true"><use href="#icon-profile"></use></svg></button>
       <button id="soundBtn" class="icon-btn" type="button" aria-label="关闭声音与环境音乐" aria-pressed="true"><svg class="ui-icon" aria-hidden="true"><use href="#icon-volume-on"></use></svg></button>
+      <button id="settingsBtn" class="icon-btn" type="button" aria-label="打开游戏设置" aria-haspopup="dialog"><svg class="ui-icon" aria-hidden="true"><use href="#icon-settings"></use></svg></button>
     </header>
 
     <section class="table-stage" aria-label="游戏牌桌">
@@ -63,12 +65,12 @@
         <div id="hand" class="hand" tabindex="-1" aria-describedby="selectionHint" aria-label="你的手牌"></div>
         <div id="selectionHint" class="selection-hint">入座后开始游戏</div>
         <div class="actions">
-          <button id="challengeBtn" class="action-btn challenge" type="button" disabled>
+          <button id="challengeBtn" class="action-btn challenge" type="button" aria-keyshortcuts="C" disabled>
             <span class="action-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-eye"></use></svg></span>
-            <span><b>质疑</b><small id="challengeText">尚无可质疑出牌</small></span>
+            <span><b id="challengeLabel" data-i18n="actionChallenge">质疑</b><small id="challengeText">尚无可质疑出牌</small></span>
           </button>
-          <button id="playBtn" class="action-btn play" type="button" disabled>
-            <span><b>打出 <em id="selectedCount">0</em> 张</b><small id="claimText">宣称是 K</small></span>
+          <button id="playBtn" class="action-btn play" type="button" aria-keyshortcuts="P" disabled>
+            <span><b><span id="playLabel" data-i18n="actionPlay">出牌</span> <em id="selectedCount">0</em></b><small id="claimText">宣称是 K</small></span>
             <span class="action-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-arrow-right"></use></svg></span>
           </button>
         </div>
@@ -85,11 +87,11 @@
       <div id="modeChooser" class="mode-chooser">
         <button id="soloBtn" class="mode-card primary" type="button">
           <span class="mode-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-cards"></use></svg></span>
-          <b>单人牌局</b><small>与三名酒馆老手较量</small>
+          <b data-i18n="startSolo">单人牌局</b><small>与三名酒馆老手较量</small>
         </button>
         <button id="lanBtn" class="mode-card" type="button">
           <span class="mode-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-network"></use></svg></span>
-          <b>局域网联机</b><small>2–4 人实时同桌</small>
+          <b data-i18n="startLan">局域网联机</b><small>2–4 人实时同桌</small>
         </button>
       </div>
 
@@ -111,7 +113,9 @@
       </form>
 
       <p class="tip">JOKER 可充当任意指定牌 · 活到最后即获胜</p>
-      <button id="announcementBtn" class="version-btn" type="button" aria-haspopup="dialog">v1.3.1 · 查看本次更新</button>
+      <button id="tutorialBtn" class="version-btn tutorial-entry" type="button" aria-haspopup="dialog" data-i18n="openTutorial">开始新手教程</button>
+      <button id="startSettingsBtn" class="version-btn" type="button" aria-haspopup="dialog" data-i18n="settingsTitle">游戏设置</button>
+      <button id="announcementBtn" class="version-btn" type="button" aria-haspopup="dialog">v1.4.0 · 查看本次更新</button>
     </div>
   </section>
 
@@ -182,6 +186,82 @@
     </div>
   </section>
 
+  <section id="settingsOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
+    <div class="panel-card settings-card">
+      <button id="closeSettingsBtn" class="close-btn" type="button" aria-label="关闭游戏设置"><svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
+      <header class="settings-heading">
+        <p class="eyebrow" data-i18n="settingsEyebrow">酒馆偏好</p>
+        <h2 id="settingsTitle" data-i18n="settingsTitle">游戏设置</h2>
+      </header>
+      <div class="settings-layout">
+        <nav id="settingsTabs" class="settings-tabs" role="tablist" aria-label="设置分类">
+          <button type="button" role="tab" aria-selected="true" aria-controls="settings-experience" data-settings-tab="experience" data-i18n="tabExperience">体验</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="settings-sound" data-settings-tab="sound" data-i18n="tabSound">声音</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="settings-language" data-settings-tab="language" data-i18n="tabLanguage">语言</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="settings-news" data-settings-tab="news" data-i18n="tabNews">公告</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="settings-about" data-settings-tab="about" data-i18n="tabAbout">关于</button>
+        </nav>
+        <div class="settings-content">
+          <section id="settings-experience" class="settings-panel" role="tabpanel" data-settings-panel="experience">
+            <h3 data-i18n="tabExperience">体验</h3>
+            <label class="setting-row"><span><b data-i18n="motion">增强动画</b><small>启用发牌、光影与状态过渡</small></span><input id="motionEnabled" type="checkbox" role="switch" checked></label>
+            <label class="setting-row"><span><b data-i18n="visualEffects">桌面光影</b><small>显示颗粒、浮尘与环境辉光</small></span><input id="visualEffectsEnabled" type="checkbox" role="switch" checked></label>
+            <button id="openTutorialBtn" class="setting-action" type="button"><span><b data-i18n="openTutorial">开始新手教程</b><small>重新学习出牌、质疑与左轮裁决</small></span><i>→</i></button>
+          </section>
+          <section id="settings-sound" class="settings-panel" role="tabpanel" data-settings-panel="sound" hidden>
+            <h3 data-i18n="tabSound">声音</h3>
+            <label class="setting-row"><span><b data-i18n="masterSound">总声音</b><small>一键控制所有声音输出</small></span><input id="soundEnabled" type="checkbox" role="switch" checked></label>
+            <label class="volume-row" for="masterVolume"><span>总音量 <output id="masterVolumeValue">80%</output></span><input id="masterVolume" type="range" min="0" max="100" value="80"></label>
+            <label class="setting-row"><span><b data-i18n="music">环境音乐</b><small>酒馆低吟、壁炉与紧张氛围</small></span><input id="musicEnabled" type="checkbox" role="switch" checked></label>
+            <label class="volume-row" for="musicVolume"><span>音乐音量 <output id="musicVolumeValue">70%</output></span><input id="musicVolume" type="range" min="0" max="100" value="70"></label>
+            <label class="setting-row"><span><b data-i18n="soundEffects">操作音效</b><small>选牌、质疑、转轮和击发反馈</small></span><input id="sfxEnabled" type="checkbox" role="switch" checked></label>
+            <label class="volume-row" for="sfxVolume"><span>音效音量 <output id="sfxVolumeValue">85%</output></span><input id="sfxVolume" type="range" min="0" max="100" value="85"></label>
+          </section>
+          <section id="settings-language" class="settings-panel" role="tabpanel" data-settings-panel="language" hidden>
+            <h3 data-i18n="language">界面语言</h3>
+            <p>选择后立即更新核心界面、设置与教程文字。</p>
+            <label class="language-picker" for="languageSelect"><span data-i18n="language">界面语言</span><select id="languageSelect">
+              <option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option><option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt-BR">Português</option><option value="ru">Русский</option>
+            </select></label>
+          </section>
+          <section id="settings-news" class="settings-panel" role="tabpanel" data-settings-panel="news" hidden>
+            <h3 data-i18n="news">最新公告</h3>
+            <article class="settings-release"><small>2026-07-27</small><b>v1.4.0 · 酒馆焕新</b><p>新增设置中心、十种语言、新手教程、分轨音频与更丰富的界面动画。</p></article>
+            <button id="settingsAnnouncementBtn" class="setting-action" type="button"><span><b>查看完整更新公告</b><small>阅读本次更新与历史版本</small></span><i>→</i></button>
+          </section>
+          <section id="settings-about" class="settings-panel" role="tabpanel" data-settings-panel="about" hidden>
+            <h3 data-i18n="about">关于本作</h3>
+            <p>由 Hanazar Games 打造的局域网吹牛卡牌游戏。</p>
+            <div class="about-links">
+              <a href="https://github.com/Hanazar-Games/Liars-Bar-webgame" target="_blank" rel="noopener"><span data-i18n="repository">代码仓库</span><i>↗</i></a>
+              <a href="https://github.com/Hanazar-Games/Liars-Bar-webgame/issues" target="_blank" rel="noopener"><span data-i18n="issues">问题反馈</span><i>↗</i></a>
+              <a href="https://github.com/Hanazar-Games/Liars-Bar-webgame/discussions" target="_blank" rel="noopener"><span data-i18n="discussions">社区讨论</span><i>↗</i></a>
+              <a href="https://github.com/hzagaming" target="_blank" rel="noopener"><span data-i18n="author">作者主页</span><i>↗</i></a>
+              <a href="https://hanazargames.com" target="_blank" rel="noopener"><span data-i18n="home">返回官网</span><i>↗</i></a>
+            </div>
+          </section>
+        </div>
+      </div>
+      <button id="settingsDoneBtn" class="primary-btn compact" type="button" data-i18n="done">完成</button>
+    </div>
+  </section>
+
+  <section id="tutorialOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle" aria-describedby="tutorialCopy tutorialProgress" hidden>
+    <div class="panel-card tutorial-card">
+      <button id="closeTutorialBtn" class="close-btn" type="button" aria-label="关闭新手教程"><svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
+      <p class="eyebrow" data-i18n="tutorialEyebrow">第一次入座</p>
+      <p id="tutorialProgress" class="tutorial-progress">第 1 / 4 步</p>
+      <div id="tutorialVisual" class="tutorial-visual" data-step="0" aria-hidden="true"><i></i><i></i><i></i></div>
+      <h2 id="tutorialTitle">看清本局指定牌</h2>
+      <p id="tutorialCopy">每局只认 A、K 或 Q 中的一种，JOKER 永远可以充当指定牌。</p>
+      <div id="tutorialDots" class="tutorial-dots" aria-hidden="true"></div>
+      <div class="tutorial-actions">
+        <button id="tutorialBackBtn" class="secondary-btn compact" type="button" data-i18n="back">上一步</button>
+        <button id="tutorialNextBtn" class="primary-btn compact" type="button" data-i18n="next">下一步</button>
+      </div>
+    </div>
+  </section>
+
   <section id="menuOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="rulesTitle" hidden>
     <div class="panel-card menu-card">
       <button id="closeMenuBtn" class="close-btn" type="button" aria-label="关闭游戏规则"><svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
@@ -189,9 +269,10 @@
       <h2 id="rulesTitle">如何活到最后</h2>
       <ol>
         <li><b>出牌</b><span>选择 1–3 张手牌暗扣，并宣称它们都是本局指定牌。</span></li>
-        <li><b>判断</b><span>轮到你时，可以继续出牌，或质疑上一位玩家。</span></li>
+        <li><b>判断</b><span>轮到你时，可以继续出牌，或质疑上一位玩家；手牌出尽后只能质疑。</span></li>
         <li><b>惩罚</b><span>质疑成功，撒谎者扣动左轮；质疑失败，则由质疑者受罚。</span></li>
         <li><b>胜利</b><span>每局重新发牌。左轮击发即淘汰，最后存活者获胜。</span></li>
+        <li><b>快捷</b><span>数字键 1–5 选牌，P 出牌，C 质疑。</span></li>
       </ol>
       <button id="resumeBtn" class="primary-btn compact" type="button">回到牌桌</button>
     </div>
@@ -201,16 +282,17 @@
     <div class="panel-card announcement-card">
       <button id="closeAnnouncementBtn" class="close-btn" type="button" aria-label="关闭更新公告"><svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
       <p class="eyebrow">更新公告</p>
-      <h2 id="announcementTitle">v1.3.1 · 稳住氛围</h2>
-      <p class="release-date">2026-07-26</p>
+      <h2 id="announcementTitle">v1.4.0 · 酒馆焕新</h2>
+      <p class="release-date">2026-07-27</p>
       <ul>
-        <li>顶部状态改为准确显示桌面累计牌数，不再把未发出的牌误称为牌堆。</li>
-        <li>静音与切换后台时会平滑关闭全部输出，避免延迟音效漏出。</li>
-        <li>新增开局与换局提示音，并修正空手回合提示。</li>
-        <li>完善极窄屏顶部布局和手牌跳转焦点。</li>
+        <li>新增体验、声音、语言、公告与关于五分区设置中心。</li>
+        <li>新增 10 种界面语言与四步新手教程，支持即时切换。</li>
+        <li>重构总音量、环境音乐与操作音效分轨控制，修正静音和后台输出。</li>
+        <li>加入发牌、浮尘、面板、回合与教程动画，并保留减少动态效果选项。</li>
       </ul>
       <details>
         <summary>历史公告</summary>
+        <article><b>v1.3.1 · 稳住氛围</b><time>2026-07-26</time><p>修正桌面牌数、静音输出、换局提示与极窄屏焦点。</p></article>
         <article><b>v1.3.0 · 酒客留名</b><time>2026-07-26</time><p>新增酒客档案、动态称号与声名刻度，并让环境声随牌局压力变化。</p></article>
         <article><b>v1.2.0 · 沉浸酒桌</b><time>2026-07-24</time><p>强化牌桌反馈、程序化音效与环境音乐，并完善移动端和短横屏体验。</p></article>
         <article><b>v1.1.1 · 稳住酒桌</b><time>2026-07-23</time><p>修复联机状态锁死、弹层焦点与重复头像，并优化触屏、窄屏和音频峰值。</p></article>
