@@ -26,6 +26,7 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.doesNotMatch(html, /https:\/\/fonts\.(?:googleapis|gstatic)\.com/);
   assert.match(styles, /\[hidden\]\s*\{\s*display:\s*none\s*!important/);
   assert.doesNotMatch(styles, /\.game-shell\s*\{[^}]*filter:\s*brightness/);
+  assert.match(styles, /\.game-shell::before\s*\{[^}]*filter:\s*brightness\(var\(--scene-brightness\)\)\s*contrast\(var\(--scene-contrast\)\)/);
   assert.match(styles, /\.table-stage\s*\{[^}]*filter:\s*brightness\(var\(--scene-brightness\)\)\s*contrast\(var\(--scene-contrast\)\)/);
   assert.match(html, /id="lastClaim"[^>]+aria-live="polite"/);
   assert.match(html, /<span>桌面 <b id="pileCount">0<\/b><\/span>/);
@@ -62,6 +63,7 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   ['autoFocusEnabled', 'shortcutsEnabled', 'historyEnabled', 'turnEffectsEnabled', 'uiSoundsEnabled', 'gameSoundsEnabled', 'announcementSoundsEnabled']
     .forEach((id) => assert.match(html, new RegExp(`id="${id}"[^>]+type="checkbox"`)));
   assert.match(html, /id="resetPreferencesBtn"/);
+  assert.match(html, /id="wildcardHint"[^>]*>[^<]*JOKER[^<]*万能牌/);
   assert.match(html, /https:\/\/github\.com\/Hanazar-Games\/Liars-Bar-webgame\/issues/);
   assert.match(html, /https:\/\/github\.com\/Hanazar-Games\/Liars-Bar-webgame\/discussions/);
   assert.match(html, /https:\/\/github\.com\/hzagaming/);
@@ -94,6 +96,9 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(script, /function resetPreferences/);
   assert.match(script, /\.settings-content'\)\.scrollTop = 0/);
   assert.match(script, /function scaledAIDelay/);
+  assert.match(script, /function revealDelay/);
+  assert.match(script, /online \? Math\.min\(motionFactor, 1\.25\) : motionFactor/);
+  assert.match(script, /function openSettings\(\)\s*\{[\s\S]*?startAmbience\(\)/);
   assert.match(script, /announcementSounds/);
   assert.match(script, /--motion-speed/);
   assert.match(script, /--card-scale/);
@@ -101,9 +106,9 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(script, /button, input, select, a\[href\], summary, \[tabindex\]/);
   assert.match(script, /你已被淘汰，正在旁观/);
   assert.match(script, /if \(roundStarted\) \{[\s\S]*focusSoon/);
-  assert.match(html, /v1\.5\.0/);
+  assert.match(html, /v1\.5\.1/);
   const { version } = JSON.parse(manifest);
-  assert.equal(version, '1.5.0');
+  assert.equal(version, '1.5.1');
   assert.match(server, new RegExp(`v${version.replaceAll('.', '\\.')}`));
   assert.match(server, /\['\/src\/guest-profile\.js', \['src\/guest-profile\.js', 'text\/javascript; charset=utf-8'\]\]/);
   assert.match(changelog, /v1\.1\.1/);
@@ -111,6 +116,7 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(changelog, /v1\.3\.1/);
   assert.match(changelog, /v1\.4\.0/);
   assert.match(changelog, /v1\.5\.0/);
+  assert.match(changelog, /v1\.5\.1/);
   assert.match(changelog, /v1\.2\.0/);
   assert.match(changelog, /v1\.1\.0/);
   assert.match(changelog, /v1\.0\.0/);

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GameEngine, createDeck } from '../src/game-engine.js';
+import { CARD_NAMES, GameEngine, WILD_CARD, cardMatchesTarget, createDeck } from '../src/game-engine.js';
 
 const players = ['a', 'b', 'c', 'd'].map((id) => ({ id, name: id.toUpperCase() }));
 const fixedRandom = () => 0;
@@ -29,6 +29,15 @@ test('creates the expected deck and deals five private cards', () => {
   assert.equal(view.players.find((player) => player.id === 'a').hand.length, 5);
   assert.equal('hand' in view.players.find((player) => player.id === 'b'), false);
   assert.equal(view.players.find((player) => player.id === 'b').handCount, 5);
+});
+
+test('treats only Joker as the wildcard and names Ace unambiguously', () => {
+  assert.equal(WILD_CARD, 'JOKER');
+  assert.equal(cardMatchesTarget('JOKER', 'K'), true);
+  assert.equal(cardMatchesTarget('K', 'K'), true);
+  assert.equal(cardMatchesTarget('Q', 'K'), false);
+  assert.equal(CARD_NAMES.A, 'A牌');
+  assert.match(CARD_NAMES.JOKER, /万能牌/);
 });
 
 test('validates turn ownership and card selections', () => {

@@ -1,3 +1,5 @@
+import { cardMatchesTarget } from './game-engine.js';
+
 export function createGuestProfile() {
   return {
     cardsPlayed: 0,
@@ -12,7 +14,7 @@ export function createGuestProfile() {
 
 export function recordClaim(profile, cards, target) {
   if (!Array.isArray(cards) || !cards.length) return profile;
-  const lied = cards.some((card) => card !== target && card !== 'JOKER');
+  const lied = cards.some((card) => !cardMatchesTarget(card, target));
   return {
     ...profile,
     cardsPlayed: profile.cardsPlayed + cards.length,

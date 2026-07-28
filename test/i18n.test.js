@@ -9,6 +9,7 @@ const REQUIRED_KEYS = [
   'tabGameplay', 'resetDefaults', 'motionSpeed', 'cardScale', 'sceneBrightness', 'sceneContrast', 'particles',
   'aiSpeed', 'autoFocus', 'shortcuts', 'history', 'turnEffects', 'ambienceIntensity', 'musicWarmth',
   'uiSounds', 'gameSounds', 'announcementSounds', 'cuePitch',
+  'wildcardHint',
 ];
 
 test('ships ten complete language choices for core UI', () => {
@@ -17,6 +18,13 @@ test('ships ten complete language choices for core UI', () => {
   LANGUAGES.forEach(({ code, label }) => {
     assert.ok(label);
     REQUIRED_KEYS.forEach((key) => assert.ok(TRANSLATIONS[code][key], `${code}.${key}`));
+  });
+});
+
+test('localizes the expanded settings instead of leaking English fallbacks', () => {
+  const keys = ['tabGameplay', 'resetDefaults', 'motionSpeed', 'cardScale', 'sceneBrightness', 'aiSpeed', 'autoFocus', 'history', 'ambienceIntensity', 'musicWarmth', 'uiSounds', 'gameSounds', 'announcementSounds', 'cuePitch'];
+  LANGUAGES.filter(({ code }) => !['zh-CN', 'en'].includes(code)).forEach(({ code }) => {
+    keys.forEach((key) => assert.notEqual(TRANSLATIONS[code][key], TRANSLATIONS.en[key], `${code}.${key}`));
   });
 });
 

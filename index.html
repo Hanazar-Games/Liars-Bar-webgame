@@ -48,6 +48,7 @@
           <strong id="targetRank">K</strong>
           <small id="targetName">国王</small>
         </div>
+        <p id="wildcardHint" class="wildcard-hint" data-i18n="wildcardHint">★ JOKER = 万能牌</p>
         <div id="playedPile" class="played-pile" aria-label="桌面牌堆">
           <div class="empty-pile">等待出牌</div>
         </div>
@@ -112,10 +113,10 @@
         <button id="backModeBtn" class="text-btn" type="button"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-left"></use></svg>返回模式选择</button>
       </form>
 
-      <p class="tip">JOKER 可充当任意指定牌 · 活到最后即获胜</p>
+      <p class="tip">只有 JOKER 是万能牌，可充当任意指定牌 · 活到最后即获胜</p>
       <button id="tutorialBtn" class="version-btn tutorial-entry" type="button" aria-haspopup="dialog" data-i18n="openTutorial">开始新手教程</button>
       <button id="startSettingsBtn" class="version-btn" type="button" aria-haspopup="dialog" data-i18n="settingsTitle">游戏设置</button>
-      <button id="announcementBtn" class="version-btn" type="button" aria-haspopup="dialog">v1.5.0 · 查看本次更新</button>
+      <button id="announcementBtn" class="version-btn" type="button" aria-haspopup="dialog">v1.5.1 · 查看本次更新</button>
     </div>
   </section>
 
@@ -210,7 +211,7 @@
             <label class="setting-row"><span><b data-i18n="visualEffects">桌面光影</b><small>显示颗粒、浮尘与环境辉光</small></span><input id="visualEffectsEnabled" type="checkbox" role="switch" checked></label>
             <label class="volume-row" for="sceneBrightness"><span><span data-i18n="sceneBrightness">场景亮度</span> <output id="sceneBrightnessValue">100%</output></span><input id="sceneBrightness" type="range" min="55" max="145" value="100"></label>
             <label class="volume-row" for="sceneContrast"><span><span data-i18n="sceneContrast">场景对比度</span> <output id="sceneContrastValue">100%</output></span><input id="sceneContrast" type="range" min="70" max="150" value="100"></label>
-            <label class="volume-row" for="particleDensity"><span><span data-i18n="particles">浮尘密度</span> <output id="particleDensityValue">100%</output></span><input id="particleDensity" type="range" min="0" max="150" value="100"></label>
+            <label class="volume-row" for="particleDensity"><span><span data-i18n="particles">浮尘强度</span> <output id="particleDensityValue">100%</output></span><input id="particleDensity" type="range" min="0" max="150" value="100"></label>
             <label class="volume-row" for="cardScale"><span><span data-i18n="cardScale">手牌缩放</span> <output id="cardScaleValue">100%</output></span><input id="cardScale" type="range" min="75" max="130" value="100"></label>
             <button id="openTutorialBtn" class="setting-action" type="button"><span><b data-i18n="openTutorial">开始新手教程</b><small>重新学习出牌、质疑与左轮裁决</small></span><i>→</i></button>
           </section>
@@ -232,7 +233,7 @@
             <label class="volume-row" for="musicWarmth"><span><span data-i18n="musicWarmth">环境音温暖度</span> <output id="musicWarmthValue">55%</output></span><input id="musicWarmth" type="range" min="0" max="100" value="55"></label>
             <label class="setting-row"><span><b data-i18n="soundEffects">操作音效</b><small>选牌、质疑、转轮和击发反馈</small></span><input id="sfxEnabled" type="checkbox" role="switch" checked></label>
             <label class="volume-row" for="sfxVolume"><span>音效音量 <output id="sfxVolumeValue">85%</output></span><input id="sfxVolume" type="range" min="0" max="100" value="85"></label>
-            <label class="volume-row" for="cuePitch"><span><span data-i18n="cuePitch">提示音音高</span> <output id="cuePitchValue">100%</output></span><input id="cuePitch" type="range" min="70" max="130" value="100"></label>
+            <label class="volume-row" for="cuePitch"><span><span data-i18n="cuePitch">音效音高</span> <output id="cuePitchValue">100%</output></span><input id="cuePitch" type="range" min="70" max="130" value="100"></label>
             <label class="setting-row"><span><b data-i18n="uiSounds">界面提示音</b><small>设置、教程、选项与纸页反馈</small></span><input id="uiSoundsEnabled" type="checkbox" role="switch" checked></label>
             <label class="setting-row"><span><b data-i18n="gameSounds">牌局提示音</b><small>出牌、质疑、转轮、空膛与击发</small></span><input id="gameSoundsEnabled" type="checkbox" role="switch" checked></label>
             <label class="setting-row"><span><b data-i18n="announcementSounds">公告提示音</b><small>打开和关闭更新公告时播放反馈</small></span><input id="announcementSoundsEnabled" type="checkbox" role="switch" checked></label>
@@ -246,7 +247,7 @@
           </section>
           <section id="settings-news" class="settings-panel" role="tabpanel" data-settings-panel="news" hidden>
             <h3 data-i18n="news">最新公告</h3>
-            <article class="settings-release"><small>2026-07-27</small><b>v1.5.0 · 随心调校</b><p>新增 20 项可调参数，扩展视觉、AI 节奏、BGM、SFX 与辅助设置。</p></article>
+            <article class="settings-release"><small>2026-07-28</small><b>v1.5.1 · 万能牌明示</b><p>明确 JOKER 万能牌规则，并修复动画节奏、BGM 预览、场景滤镜、多语言与极窄屏体验。</p></article>
             <button id="settingsAnnouncementBtn" class="setting-action" type="button"><span><b>查看完整更新公告</b><small>阅读本次更新与历史版本</small></span><i>→</i></button>
           </section>
           <section id="settings-about" class="settings-panel" role="tabpanel" data-settings-panel="about" hidden>
@@ -276,7 +277,7 @@
       <p id="tutorialProgress" class="tutorial-progress">第 1 / 4 步</p>
       <div id="tutorialVisual" class="tutorial-visual" data-step="0" aria-hidden="true"><i></i><i></i><i></i></div>
       <h2 id="tutorialTitle">看清本局指定牌</h2>
-      <p id="tutorialCopy">每局只认 A、K 或 Q 中的一种，JOKER 永远可以充当指定牌。</p>
+      <p id="tutorialCopy">每局指定 A、K 或 Q；只有 JOKER 是万能牌，可充当任意指定牌。</p>
       <div id="tutorialDots" class="tutorial-dots" aria-hidden="true"></div>
       <div class="tutorial-actions">
         <button id="tutorialBackBtn" class="secondary-btn compact" type="button" data-i18n="back">上一步</button>
@@ -291,6 +292,7 @@
       <p class="eyebrow">游戏规则</p>
       <h2 id="rulesTitle">如何活到最后</h2>
       <ol>
+        <li><b>认牌</b><span>每局指定 A、K 或 Q；只有 JOKER 是万能牌，Q 只是普通皇后牌。</span></li>
         <li><b>出牌</b><span>选择 1–3 张手牌暗扣，并宣称它们都是本局指定牌。</span></li>
         <li><b>判断</b><span>轮到你时，可以继续出牌，或质疑上一位玩家；手牌出尽后只能质疑。</span></li>
         <li><b>惩罚</b><span>质疑成功，撒谎者扣动左轮；质疑失败，则由质疑者受罚。</span></li>
@@ -305,16 +307,17 @@
     <div class="panel-card announcement-card">
       <button id="closeAnnouncementBtn" class="close-btn" type="button" aria-label="关闭更新公告"><svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
       <p class="eyebrow">更新公告</p>
-      <h2 id="announcementTitle">v1.5.0 · 随心调校</h2>
-      <p class="release-date">2026-07-27</p>
+      <h2 id="announcementTitle">v1.5.1 · 万能牌明示</h2>
+      <p class="release-date">2026-07-28</p>
       <ul>
-        <li>设置中心扩展为六分区，提供 20 项可调参数与一键恢复默认。</li>
-        <li>动画速度、手牌缩放、亮度、对比度与粒子密度支持大范围实时调节。</li>
-        <li>新增 AI 思考节奏、自动聚焦、快捷键、行动历史与回合强调开关。</li>
-        <li>扩展 BGM 氛围强度和音色，并将界面、牌局、公告 SFX 分别控制。</li>
+        <li>明确只有 JOKER 是万能牌，修正 A 牌名称歧义，并强化牌面、教程和质疑结果提示。</li>
+        <li>修复关闭动画后裁决仍长时间等待，并让动画速度同步控制揭牌与左轮节奏。</li>
+        <li>修复首页设置无法实时试听 BGM 参数，并让亮度与对比度同时覆盖酒馆背景。</li>
+        <li>补齐新增设置的十语言标签，优化浮尘与音高命名及 320px 极窄屏按钮布局。</li>
       </ul>
       <details>
         <summary>历史公告</summary>
+        <article><b>v1.5.0 · 随心调校</b><time>2026-07-27</time><p>新增 20 项视觉、辅助、AI、BGM 与 SFX 参数、一键恢复默认及响应式设置布局。</p></article>
         <article><b>v1.4.0 · 酒馆焕新</b><time>2026-07-27</time><p>新增设置中心、10 种语言、新手教程、分轨音频与界面动画。</p></article>
         <article><b>v1.3.1 · 稳住氛围</b><time>2026-07-26</time><p>修正桌面牌数、静音输出、换局提示与极窄屏焦点。</p></article>
         <article><b>v1.3.0 · 酒客留名</b><time>2026-07-26</time><p>新增酒客档案、动态称号与声名刻度，并让环境声随牌局压力变化。</p></article>

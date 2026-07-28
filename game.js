@@ -1,4 +1,4 @@
-import { CARD_NAMES, GameEngine, shuffle } from './src/game-engine.js';
+import { CARD_NAMES, GameEngine, WILD_CARD, cardMatchesTarget, shuffle } from './src/game-engine.js';
 import { createGuestProfile, describeGuest, recordChallenge, recordClaim, syncSurvivedRounds } from './src/guest-profile.js';
 import { translate } from './src/i18n.js';
 
@@ -294,6 +294,9 @@ function syncPreferenceClasses() {
   document.body.classList.toggle('turn-effects-off', !app.preferences.turnEffects);
   root.style.setProperty('--motion-speed', motionFactor.toFixed(3));
   root.style.setProperty('--duration-card', `${.48 * motionFactor}s`);
+  root.style.setProperty('--duration-action', `${.24 * motionFactor}s`);
+  root.style.setProperty('--duration-lamp', `${4 * motionFactor}s`);
+  root.style.setProperty('--duration-flip', `${.45 * motionFactor}s`);
   root.style.setProperty('--duration-panel', `${.34 * motionFactor}s`);
   root.style.setProperty('--duration-dust', `${14 * motionFactor}s`);
   root.style.setProperty('--duration-turn', `${1.8 * motionFactor}s`);
@@ -483,8 +486,8 @@ function renderHand(me, view) {
     const red = rank === 'Q' ? 'red' : '';
     const rotation = (index - (hand.length - 1) / 2) * 3;
     const label = `${CARD_NAMES[rank]}，第 ${index + 1} 张${selected ? '，已选择' : ''}`;
-    return `<button class="card ${rank === 'JOKER' ? 'joker' : ''} ${red} ${selected ? 'selected' : ''} ${dealing ? 'dealing' : ''}" type="button" data-index="${index}" style="--rot:${rotation}deg;--delay:${index * 55}ms" aria-label="${label}" aria-keyshortcuts="${index + 1}" aria-pressed="${selected}" ${myTurn ? '' : 'disabled'}>
-      <span class="corner">${rank === 'JOKER' ? '★' : rank}</span><span class="suit">${rank === 'Q' ? '♥' : rank === 'K' ? '♣' : rank === 'A' ? '♠' : '✦'}</span><span class="face">${rank === 'JOKER' ? 'J' : rank}</span>
+    return `<button class="card ${rank === WILD_CARD ? 'joker' : ''} ${red} ${selected ? 'selected' : ''} ${dealing ? 'dealing' : ''}" type="button" data-index="${index}" style="--rot:${rotation}deg;--delay:${index * 55}ms" aria-label="${label}" aria-keyshortcuts="${index + 1}" aria-pressed="${selected}" ${myTurn ? '' : 'disabled'}>
+      <span class="corner">${rank === WILD_CARD ? '★' : rank}</span><span class="suit">${rank === 'Q' ? '♥' : rank === 'K' ? '♣' : rank === 'A' ? '♠' : '✦'}</span><span class="face">${rank === WILD_CARD ? 'J' : rank}</span>${rank === WILD_CARD ? '<small class="wild-label">万能</small>' : ''}
     </button>`;
   }).join('');
   els.hand.querySelectorAll('.card').forEach((card) => card.addEventListener('click', (event) => {
@@ -578,7 +581,7 @@ function shouldChallenge(engine, id) {
   const player = engine.player(id);
   const last = engine.lastPlay;
   if (!player.hand.length) return true;
-  const knownMatches = player.hand.filter((card) => card === engine.target || card === 'JOKER').length;
+  const knownMatches = player.hand.filter((card) => cardMatchesTarget(card, engine.target)).length;
   const impossible = knownMatches + last.count > 8;
   let chance = .14 + last.count * .1 + (engine.pile.length > 9 ? .12 : 0) + (impossible ? .65 : 0);
   if (!engine.player(last.player).hand.length) chance += .3;
@@ -587,7 +590,7 @@ function shouldChallenge(engine, id) {
 
 function chooseAI(engine, id) {
   const player = engine.player(id);
-  const matching = player.hand.map((rank, index) => rank === engine.target || rank === 'JOKER' ? index : -1).filter((index) => index >= 0);
+  const matching = player.hand.map((rank, index) => cardMatchesTarget(rank, engine.target) ? index : -1).filter((index) => index >= 0);
   const other = player.hand.map((_, index) => index).filter((index) => !matching.includes(index));
   const count = Math.min(player.hand.length, 1 + (Math.random() < .28 ? 1 : 0) + (Math.random() < .08 ? 1 : 0));
   const chosen = shuffle([...matching]).slice(0, Math.min(count, matching.length));
@@ -597,6 +600,12 @@ function chooseAI(engine, id) {
 
 function scaledAIDelay(milliseconds) {
   return milliseconds * 100 / app.preferences.aiSpeed;
+}
+
+function revealDelay(milliseconds, reduced, online) {
+  if (!app.preferences.motion || reducedMotion.matches) return reduced;
+  const motionFactor = 100 / app.preferences.motionSpeed;
+  return milliseconds * (online ? Math.min(motionFactor, 1.25) : motionFactor);
 }
 
 function maybeRunAI() {
@@ -636,20 +645,20 @@ async function showReveal(result, online) {
   els.roulette.className = 'roulette';
   els.revealTitle.textContent = result.lied ? '谎言被揭穿' : '质疑失败';
   els.revealEyebrow.textContent = `${playerName(result.challenger)}发起质疑`;
-  els.revealCopy.textContent = result.lied ? `${playerName(result.accused)}的牌中混入了假牌。` : `所有牌都能充当 ${app.view.target}，${playerName(result.challenger)}判断错了。`;
+  els.revealCopy.textContent = result.lied ? `${playerName(result.accused)}的牌中混入了假牌。` : `揭开的牌均为 ${app.view.target} 或万能 JOKER，${playerName(result.challenger)}判断错了。`;
   els.rouletteText.textContent = `${playerName(result.loser)} 必须扣动扳机……`;
   els.revealTitle.tabIndex = -1;
   focusSoon(els.revealTitle);
   soundCue('challenge');
 
-  await sleep(reducedMotion.matches ? 20 : 320);
+  await sleep(revealDelay(320, 20, online));
   if (sequence !== app.revealSequence) return;
-  els.revealed.innerHTML = result.cards.map((rank, index) => `<div class="reveal-mini ${rank !== app.view.target && rank !== 'JOKER' ? 'lie' : ''}" style="animation-delay:${index * .14}s">${rank === 'JOKER' ? '★' : rank}</div>`).join('');
-  await sleep(reducedMotion.matches ? 40 : 950);
+  els.revealed.innerHTML = result.cards.map((rank, index) => `<div class="reveal-mini ${!cardMatchesTarget(rank, app.view.target) ? 'lie' : ''} ${rank === WILD_CARD ? 'joker' : ''}" style="animation-delay:${index * .14}s" aria-label="${CARD_NAMES[rank]}">${rank === WILD_CARD ? '★<small>万能</small>' : rank}</div>`).join('');
+  await sleep(revealDelay(950, 40, online));
   if (sequence !== app.revealSequence) return;
   els.roulette.classList.add('firing');
   soundCue('spin');
-  await sleep(reducedMotion.matches ? 50 : 1250);
+  await sleep(revealDelay(1250, 50, online));
   if (sequence !== app.revealSequence) return;
   if (result.bang) {
     els.roulette.classList.add('bang');
@@ -659,7 +668,7 @@ async function showReveal(result, online) {
     els.rouletteText.textContent = `咔哒……空膛。${playerName(result.loser)} 逃过一劫。`;
     soundCue('empty');
   }
-  await sleep(reducedMotion.matches ? 30 : 550);
+  await sleep(revealDelay(550, 30, online));
   if (sequence !== app.revealSequence || online) return;
   els.continue.hidden = false;
   focusSoon(els.continue);
@@ -984,6 +993,7 @@ function selectSettingsTab(name) {
 }
 
 function openSettings() {
+  startAmbience();
   app.settingsFocus = document.activeElement;
   app.settingsReturn = !els.start.hidden ? els.start : !els.lobby.hidden ? els.lobby : null;
   if (app.settingsReturn) app.settingsReturn.hidden = true;

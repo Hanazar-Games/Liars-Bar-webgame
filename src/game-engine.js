@@ -1,5 +1,8 @@
 export const RANKS = ['A', 'K', 'Q'];
-export const CARD_NAMES = { A: '王牌', K: '国王', Q: '皇后', JOKER: 'JOKER' };
+export const WILD_CARD = 'JOKER';
+export const CARD_NAMES = { A: 'A牌', K: '国王', Q: '皇后', JOKER: '万能牌 · JOKER' };
+
+export const cardMatchesTarget = (card, target) => card === target || card === WILD_CARD;
 
 export function shuffle(cards, random = Math.random) {
   for (let i = cards.length - 1; i > 0; i -= 1) {
@@ -14,8 +17,8 @@ export function createDeck(random = Math.random) {
     ...Array(6).fill('A'),
     ...Array(6).fill('K'),
     ...Array(6).fill('Q'),
-    'JOKER',
-    'JOKER',
+    WILD_CARD,
+    WILD_CARD,
   ], random);
 }
 
@@ -139,7 +142,7 @@ export class GameEngine {
     if (!this.lastPlay) throw new Error('现在没有可以质疑的出牌');
 
     const play = this.lastPlay;
-    const lied = play.cards.some((card) => card !== this.target && card !== 'JOKER');
+    const lied = play.cards.some((card) => !cardMatchesTarget(card, this.target));
     const loser = lied ? play.player : id;
     const punished = this.player(loser);
     const bang = punished.shots === punished.bullet;

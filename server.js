@@ -274,7 +274,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const gameServer = createGameServer();
   try {
     const address = await gameServer.start();
-    console.log('骗子酒馆 v1.5.0 已启动：');
+    console.log('骗子酒馆 v1.5.1 已启动：');
     lanUrls(address.port).forEach((url) => console.log(`  ${url}`));
 
     const shutdown = async () => {
