@@ -87,6 +87,8 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(script, /sfxGain\?\.gain\.setTargetAtTime/);
   assert.match(script, /ambience\?\.gain\.gain\.setTargetAtTime/);
   assert.match(script, /soundCue\('ready'\)/);
+  assert.match(script, /els\.sfxVolume\.addEventListener\('change',[\s\S]*soundCue\('select'\)/);
+  assert.match(script, /els\.announcementSoundsEnabled\.addEventListener\('change',[\s\S]*soundCue\('notice'\)/);
   assert.match(script, /手牌已出尽，只能质疑上一手/);
   assert.match(script, /aria-keyshortcuts="\$\{index \+ 1\}"/);
   assert.match(script, /function handleGameShortcut/);
@@ -96,6 +98,8 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(script, /function resetPreferences/);
   assert.match(script, /\.settings-content'\)\.scrollTop = 0/);
   assert.match(script, /function scaledAIDelay/);
+  assert.match(script, /function dismissToast/);
+  assert.match(script, /message\.type === 'room'[\s\S]*?dismissToast\(\)/);
   assert.match(script, /function revealDelay/);
   assert.match(script, /online \? Math\.min\(motionFactor, 1\.25\) : motionFactor/);
   assert.match(script, /function openSettings\(\)\s*\{[\s\S]*?startAmbience\(\)/);
@@ -106,22 +110,26 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(script, /button, input, select, a\[href\], summary, \[tabindex\]/);
   assert.match(script, /你已被淘汰，正在旁观/);
   assert.match(script, /if \(roundStarted\) \{[\s\S]*focusSoon/);
-  assert.match(html, /v1\.5\.1/);
+  assert.match(script, /focus\(\{\s*preventScroll:\s*true\s*\}\)/);
+  assert.match(html, /v1\.5\.2/);
+  assert.match(html, /id="announcementTitle">v1\.5\.2[\s\S]*?class="release-date">2026-07-29/);
   const { version } = JSON.parse(manifest);
-  assert.equal(version, '1.5.1');
+  assert.equal(version, '1.5.2');
   assert.match(server, new RegExp(`v${version.replaceAll('.', '\\.')}`));
   assert.match(server, /\['\/src\/guest-profile\.js', \['src\/guest-profile\.js', 'text\/javascript; charset=utf-8'\]\]/);
-  assert.match(changelog, /v1\.1\.1/);
-  assert.match(changelog, /v1\.3\.0/);
-  assert.match(changelog, /v1\.3\.1/);
-  assert.match(changelog, /v1\.4\.0/);
-  assert.match(changelog, /v1\.5\.0/);
-  assert.match(changelog, /v1\.5\.1/);
-  assert.match(changelog, /v1\.2\.0/);
-  assert.match(changelog, /v1\.1\.0/);
-  assert.match(changelog, /v1\.0\.0/);
+  const releases = ['1.5.2', '1.5.1', '1.5.0', '1.4.0', '1.3.1', '1.3.0', '1.2.4', '1.2.3', '1.2.2', '1.2.1', '1.2.0', '1.1.1', '1.1.0', '1.0.1', '1.0.0'];
+  [html, changelog].forEach((document) => {
+    let previous = -1;
+    releases.forEach((release) => {
+      const index = document.indexOf(`v${release} ·`);
+      assert.ok(index > previous, `v${release} 应按版本倒序排列`);
+      previous = index;
+    });
+  });
   assert.match(styles, /orientation:\s*landscape[\s\S]*\.toast\s*\{[^}]*top:\s*max\(4px,/);
   assert.match(styles, /max-width:\s*360px[\s\S]*\.brand\s*\{[^}]*display:\s*none/);
+  assert.match(styles, /max-width:\s*360px[^}]*max-height:\s*620px[^}]*orientation:\s*portrait[\s\S]*\.center-table\s*\{[^}]*scale\(\.6\)/);
+  assert.match(styles, /max-width:\s*360px[^}]*max-height:\s*620px[^}]*orientation:\s*portrait[\s\S]*\.opponent\[data-total="3"\]\[data-seat="2"\][\s\S]*\.mini-cards/);
   assert.match(styles, /max-width:\s*620px[\s\S]*\.opponent \.status\s*\{[^}]*font-size:\s*10px/);
   assert.match(styles, /max-width:\s*620px[\s\S]*\.action-btn small\s*\{[^}]*font-size:\s*9px/);
   assert.match(styles, /input::placeholder\s*\{[^}]*color:\s*#857766/);

@@ -256,15 +256,21 @@ function setSound(enabled) {
   syncAudioLevels();
 }
 
+function dismissToast() {
+  clearTimeout(app.toastTimer);
+  app.toastTimer = null;
+  els.toast.classList.remove('show');
+}
+
 function toast(message) {
+  dismissToast();
   els.toast.textContent = message;
   els.toast.classList.add('show');
-  clearTimeout(app.toastTimer);
-  app.toastTimer = setTimeout(() => els.toast.classList.remove('show'), 2200);
+  app.toastTimer = setTimeout(dismissToast, 2200);
 }
 
 function focusSoon(element) {
-  requestAnimationFrame(() => element?.focus());
+  requestAnimationFrame(() => element?.focus({ preventScroll: true }));
 }
 
 function focusGameSoon(element) {
@@ -834,6 +840,7 @@ function handleOnlineMessage(message, socket) {
   }
   if (message.type === 'room') {
     clearConnectionTimer();
+    dismissToast();
     app.youId = message.youId;
     app.room = message.room;
     if (!message.room.started) showLobby();
@@ -1254,6 +1261,16 @@ bindRange(els.aiSpeed, 'aiSpeed', false);
   syncSettingsControls();
 }));
 els.cuePitch.addEventListener('change', () => soundCue('select'));
+els.sfxVolume.addEventListener('change', () => soundCue('select'));
+els.uiSoundsEnabled.addEventListener('change', () => {
+  if (app.preferences.uiSounds) soundCue('select');
+});
+els.gameSoundsEnabled.addEventListener('change', () => {
+  if (app.preferences.gameSounds) soundCue('ready');
+});
+els.announcementSoundsEnabled.addEventListener('change', () => {
+  if (app.preferences.announcementSounds) soundCue('notice');
+});
 $('#resetPreferencesBtn').addEventListener('click', resetPreferences);
 els.language.addEventListener('change', () => {
   app.preferences.language = els.language.value;

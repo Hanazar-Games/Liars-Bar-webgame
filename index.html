@@ -116,7 +116,7 @@
       <p class="tip">只有 JOKER 是万能牌，可充当任意指定牌 · 活到最后即获胜</p>
       <button id="tutorialBtn" class="version-btn tutorial-entry" type="button" aria-haspopup="dialog" data-i18n="openTutorial">开始新手教程</button>
       <button id="startSettingsBtn" class="version-btn" type="button" aria-haspopup="dialog" data-i18n="settingsTitle">游戏设置</button>
-      <button id="announcementBtn" class="version-btn" type="button" aria-haspopup="dialog">v1.5.1 · 查看本次更新</button>
+      <button id="announcementBtn" class="version-btn" type="button" aria-haspopup="dialog">v1.5.2 · 查看本次更新</button>
     </div>
   </section>
 
@@ -247,7 +247,7 @@
           </section>
           <section id="settings-news" class="settings-panel" role="tabpanel" data-settings-panel="news" hidden>
             <h3 data-i18n="news">最新公告</h3>
-            <article class="settings-release"><small>2026-07-28</small><b>v1.5.1 · 万能牌明示</b><p>明确 JOKER 万能牌规则，并修复动画节奏、BGM 预览、场景滤镜、多语言与极窄屏体验。</p></article>
+            <article class="settings-release"><small>2026-07-29</small><b>v1.5.2 · 稳住视野</b><p>修复短屏焦点、极窄屏重叠与联机提示残留，补充音效试听和历史公告。</p></article>
             <button id="settingsAnnouncementBtn" class="setting-action" type="button"><span><b>查看完整更新公告</b><small>阅读本次更新与历史版本</small></span><i>→</i></button>
           </section>
           <section id="settings-about" class="settings-panel" role="tabpanel" data-settings-panel="about" hidden>
@@ -307,23 +307,30 @@
     <div class="panel-card announcement-card">
       <button id="closeAnnouncementBtn" class="close-btn" type="button" aria-label="关闭更新公告"><svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
       <p class="eyebrow">更新公告</p>
-      <h2 id="announcementTitle">v1.5.1 · 万能牌明示</h2>
-      <p class="release-date">2026-07-28</p>
+      <h2 id="announcementTitle">v1.5.2 · 稳住视野</h2>
+      <p class="release-date">2026-07-29</p>
       <ul>
-        <li>明确只有 JOKER 是万能牌，修正 A 牌名称歧义，并强化牌面、教程和质疑结果提示。</li>
-        <li>修复关闭动画后裁决仍长时间等待，并让动画速度同步控制揭牌与左轮节奏。</li>
-        <li>修复首页设置无法实时试听 BGM 参数，并让亮度与对比度同时覆盖酒馆背景。</li>
-        <li>补齐新增设置的十语言标签，优化浮尘与音高命名及 320px 极窄屏按钮布局。</li>
+        <li>修复短横屏与极窄屏开局自动聚焦发牌时，牌桌被浏览器推离视口的问题。</li>
+        <li>重新排布 320×568 极窄屏的中央牌桌，避免对手状态与指定牌重叠。</li>
+        <li>修复房间已创建成功后，“正在连接”提示仍滞留在联机大厅的问题。</li>
+        <li>为 SFX 音量及界面、牌局、公告分轨开关补充即时试听反馈。</li>
+        <li>根据现有版本记录补齐 v1.0.1 与 v1.2.1–v1.2.4 历史公告。</li>
       </ul>
       <details>
         <summary>历史公告</summary>
+        <article><b>v1.5.1 · 万能牌明示</b><time>2026-07-28</time><p>明确 JOKER 万能牌规则，修复动画节奏、BGM 预览、场景滤镜、多语言与极窄屏体验。</p></article>
         <article><b>v1.5.0 · 随心调校</b><time>2026-07-27</time><p>新增 20 项视觉、辅助、AI、BGM 与 SFX 参数、一键恢复默认及响应式设置布局。</p></article>
         <article><b>v1.4.0 · 酒馆焕新</b><time>2026-07-27</time><p>新增设置中心、10 种语言、新手教程、分轨音频与界面动画。</p></article>
         <article><b>v1.3.1 · 稳住氛围</b><time>2026-07-26</time><p>修正桌面牌数、静音输出、换局提示与极窄屏焦点。</p></article>
         <article><b>v1.3.0 · 酒客留名</b><time>2026-07-26</time><p>新增酒客档案、动态称号与声名刻度，并让环境声随牌局压力变化。</p></article>
+        <article><b>v1.2.4 · 稳定开席</b><time>2026-07-24</time><p>修复端口占用时重复抛出 WebSocket 错误，并完善服务启动反馈。</p></article>
+        <article><b>v1.2.3 · 掌中酒馆</b><time>2026-07-24</time><p>提高移动端文字可读性，修正窄屏层级与短屏信息遮挡。</p></article>
+        <article><b>v1.2.2 · 炉火低吟</b><time>2026-07-24</time><p>升级程序化环境音乐、壁炉底噪及选牌、质疑与左轮音效。</p></article>
+        <article><b>v1.2.1 · 牌桌回声</b><time>2026-07-24</time><p>新增上一手宣称和真人、AI 回合提示，强化当前行动反馈。</p></article>
         <article><b>v1.2.0 · 沉浸酒桌</b><time>2026-07-24</time><p>强化牌桌反馈、程序化音效与环境音乐，并完善移动端和短横屏体验。</p></article>
         <article><b>v1.1.1 · 稳住酒桌</b><time>2026-07-23</time><p>修复联机状态锁死、弹层焦点与重复头像，并优化触屏、窄屏和音频峰值。</p></article>
         <article><b>v1.1.0 · 同桌共饮</b><time>2026-07-23</time><p>新增 2–4 人局域网房间、权威服务器、断线处理、共用规则引擎与移动端重构。</p></article>
+        <article><b>v1.0.1 · 初席校准</b><time>2026-07-22</time><p>补充基础牌桌布局、操作反馈与首轮稳定性修正。</p></article>
         <article><b>v1.0.0 · 初次开席</b><time>2026-07-22</time><p>推出单人骗子酒馆：三名 AI、质疑裁决与左轮淘汰玩法。</p></article>
       </details>
       <button id="announcementDoneBtn" class="primary-btn compact" type="button">知道了</button>

@@ -517,6 +517,12 @@ input[type="range"]:disabled { opacity:.35; cursor:not-allowed; }
   .settings-footer .primary-btn, .settings-footer .secondary-btn { min-width:118px; }
 }
 
+@media (max-width: 360px) and (max-height: 620px) and (orientation: portrait) {
+  .opponent[data-total="3"][data-seat="2"] { top:2%; }
+  .opponent[data-total="3"][data-seat="2"] .mini-cards, .opponent[data-total="3"][data-seat="2"] .chambers { display:none; }
+  .center-table { top:43%; transform:translate(-50%,-50%) scale(.6); }
+}
+
 @media (hover: none) {
   .icon-btn:hover, .mode-card:hover, .primary-btn:hover, .secondary-btn:hover, .action-btn:not(:disabled):hover { transform: none; filter: none; }
   .card:hover { transform: rotate(var(--rot)); box-shadow: 0 7px 12px #0009, inset 0 0 12px #fff7; }
