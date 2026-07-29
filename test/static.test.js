@@ -30,6 +30,7 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(styles, /\.table-stage\s*\{[^}]*filter:\s*brightness\(var\(--scene-brightness\)\)\s*contrast\(var\(--scene-contrast\)\)/);
   assert.match(html, /id="lastClaim"[^>]+aria-live="polite"/);
   assert.match(html, /<span>桌面 <b id="pileCount">0<\/b><\/span>/);
+  assert.match(html, /id="playedPile"[^>]+aria-live="polite"/);
   assert.match(html, /id="hand"[^>]+tabindex="-1"[^>]+aria-describedby="selectionHint"/);
   assert.match(html, /id="challengeText"/);
   assert.match(html, /id="challengeBtn"[^>]+aria-keyshortcuts="C"/);
@@ -87,6 +88,17 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(script, /sfxGain\?\.gain\.setTargetAtTime/);
   assert.match(script, /ambience\?\.gain\.gain\.setTargetAtTime/);
   assert.match(script, /soundCue\('ready'\)/);
+  assert.match(script, /soundCue\('deal'\)/);
+  assert.match(script, /soundCue\('opponentPlay'/);
+  assert.match(script, /soundCue\('turn'\)/);
+  assert.match(script, /soundCue\(won \? 'win' : 'lose'\)/);
+  assert.match(script, /function renderPile\(count, lastPlay, round\)/);
+  assert.match(script, /from-opponent/);
+  assert.match(script, /pile-play-badge/);
+  assert.match(script, /soundCue\('join'\)/);
+  assert.match(html, /id="eliminationImpact"[^>]+aria-live="assertive"/);
+  assert.match(html, /id="eliminationName"/);
+  assert.match(script, /els\.eliminationImpact\.hidden = false/);
   assert.match(script, /els\.sfxVolume\.addEventListener\('change',[\s\S]*soundCue\('select'\)/);
   assert.match(script, /els\.announcementSoundsEnabled\.addEventListener\('change',[\s\S]*soundCue\('notice'\)/);
   assert.match(script, /手牌已出尽，只能质疑上一手/);
@@ -111,13 +123,13 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(script, /你已被淘汰，正在旁观/);
   assert.match(script, /if \(roundStarted\) \{[\s\S]*focusSoon/);
   assert.match(script, /focus\(\{\s*preventScroll:\s*true\s*\}\)/);
-  assert.match(html, /v1\.5\.2/);
-  assert.match(html, /id="announcementTitle">v1\.5\.2[\s\S]*?class="release-date">2026-07-29/);
+  assert.match(html, /v1\.6\.0/);
+  assert.match(html, /id="announcementTitle">v1\.6\.0[\s\S]*?class="release-date">2026-07-29/);
   const { version } = JSON.parse(manifest);
-  assert.equal(version, '1.5.2');
+  assert.equal(version, '1.6.0');
   assert.match(server, new RegExp(`v${version.replaceAll('.', '\\.')}`));
   assert.match(server, /\['\/src\/guest-profile\.js', \['src\/guest-profile\.js', 'text\/javascript; charset=utf-8'\]\]/);
-  const releases = ['1.5.2', '1.5.1', '1.5.0', '1.4.0', '1.3.1', '1.3.0', '1.2.4', '1.2.3', '1.2.2', '1.2.1', '1.2.0', '1.1.1', '1.1.0', '1.0.1', '1.0.0'];
+  const releases = ['1.6.0', '1.5.2', '1.5.1', '1.5.0', '1.4.0', '1.3.1', '1.3.0', '1.2.4', '1.2.3', '1.2.2', '1.2.1', '1.2.0', '1.1.1', '1.1.0', '1.0.1', '1.0.0'];
   [html, changelog].forEach((document) => {
     let previous = -1;
     releases.forEach((release) => {
@@ -128,12 +140,19 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   });
   assert.match(styles, /orientation:\s*landscape[\s\S]*\.toast\s*\{[^}]*top:\s*max\(4px,/);
   assert.match(styles, /max-width:\s*360px[\s\S]*\.brand\s*\{[^}]*display:\s*none/);
+  assert.match(styles, /max-width:\s*360px[\s\S]*\.card\s*\{[^}]*width:\s*56px[^}]*height:\s*84px[^}]*margin-left:\s*-15px/);
   assert.match(styles, /max-width:\s*360px[^}]*max-height:\s*620px[^}]*orientation:\s*portrait[\s\S]*\.center-table\s*\{[^}]*scale\(\.6\)/);
+  assert.match(styles, /max-width:\s*360px[^}]*max-height:\s*620px[^}]*orientation:\s*portrait[\s\S]*\.you-row\s*\{[^}]*translateY\(-14px\)/);
   assert.match(styles, /max-width:\s*360px[^}]*max-height:\s*620px[^}]*orientation:\s*portrait[\s\S]*\.opponent\[data-total="3"\]\[data-seat="2"\][\s\S]*\.mini-cards/);
   assert.match(styles, /max-width:\s*620px[\s\S]*\.opponent \.status\s*\{[^}]*font-size:\s*10px/);
   assert.match(styles, /max-width:\s*620px[\s\S]*\.action-btn small\s*\{[^}]*font-size:\s*9px/);
   assert.match(styles, /input::placeholder\s*\{[^}]*color:\s*#857766/);
   assert.match(styles, /@keyframes card-deal/);
+  assert.match(styles, /@keyframes card-arrive/);
+  assert.match(styles, /@keyframes elimination-impact/);
+  assert.match(styles, /@keyframes impact-shock/);
+  assert.match(styles, /\.calm-motion \.elimination-impact\s*\{[^}]*opacity:\s*1/);
+  assert.match(styles, /prefers-reduced-motion:[^)]*reduce[\s\S]*\.elimination-impact\s*\{[^}]*animation:\s*none\s*!important[^}]*opacity:\s*1/);
   assert.match(styles, /@keyframes dust-drift/);
   assert.match(styles, /@keyframes settings-panel-in/);
   assert.match(server, /\['\/src\/i18n\.js', \['src\/i18n\.js', 'text\/javascript; charset=utf-8'\]\]/);

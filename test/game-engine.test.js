@@ -57,6 +57,7 @@ test('validates turn ownership and card selections', () => {
   assert.equal(engine.pile.length, 2);
   assert.equal(engine.current, 'b');
   assert.equal(engine.viewFor('a').pileCount, 2);
+  assert.deepEqual(engine.viewFor('b').lastPlay, { player: 'a', count: 2 });
 });
 
 test('punishes the accused when a lie is found', () => {

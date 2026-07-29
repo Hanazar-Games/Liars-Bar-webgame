@@ -43,6 +43,7 @@ const els = {
   tutorial: $('#tutorialOverlay'), tutorialTitle: $('#tutorialTitle'), tutorialCopy: $('#tutorialCopy'),
   tutorialProgress: $('#tutorialProgress'), tutorialVisual: $('#tutorialVisual'), tutorialDots: $('#tutorialDots'),
   tutorialBack: $('#tutorialBackBtn'), tutorialNext: $('#tutorialNextBtn'), language: $('#languageSelect'),
+  eliminationImpact: $('#eliminationImpact'), eliminationName: $('#eliminationName'),
   soundEnabled: $('#soundEnabled'), masterVolume: $('#masterVolume'), musicEnabled: $('#musicEnabled'),
   musicVolume: $('#musicVolume'), sfxEnabled: $('#sfxEnabled'), sfxVolume: $('#sfxVolume'),
   motionEnabled: $('#motionEnabled'), visualEffectsEnabled: $('#visualEffectsEnabled'),
@@ -70,6 +71,7 @@ const app = {
   aiTimer: null,
   toastTimer: null,
   connectionTimer: null,
+  impactTimer: null,
   connecting: false,
   lastFocus: null,
   settingsFocus: null,
@@ -166,19 +168,31 @@ function noiseBurst(duration = .06, volume = .02, frequency = 1200, delay = 0) {
   source.start(now);
 }
 
-function soundCue(name) {
+function soundCue(name, detail = 1) {
   if (['select', 'paper'].includes(name) && !app.preferences.uiSounds) return;
-  if (['play', 'challenge', 'spin', 'bang', 'empty', 'ready'].includes(name) && !app.preferences.gameSounds) return;
+  if (['play', 'opponentPlay', 'deal', 'turn', 'join', 'challenge', 'spin', 'bang', 'empty', 'ready', 'win', 'lose'].includes(name) && !app.preferences.gameSounds) return;
   if (name === 'notice' && !app.preferences.announcementSounds) return;
   if (name === 'select') tone(420, .045, 'triangle', .022);
   if (name === 'play') { noiseBurst(.07, .028, 850); tone(115, .09, 'triangle', .02); }
-  if (name === 'challenge') { tone(155, .13, 'sawtooth', .028); tone(82, .2, 'sawtooth', .022, .09); }
-  if (name === 'spin') { noiseBurst(.5, .012, 500); tone(64, .7, 'sawtooth', .012); }
-  if (name === 'bang') { noiseBurst(.45, .11, 420); tone(42, .7, 'square', .085); }
-  if (name === 'empty') { noiseBurst(.035, .026, 2400); tone(210, .06, 'triangle', .025); }
+  if (name === 'opponentPlay') Array.from({ length: Math.min(3, detail) }, (_, index) => index * .065).forEach((delay, index) => {
+    noiseBurst(.07, .022, 900 + index * 170, delay);
+    tone(138 - index * 12, .075, 'triangle', .013, delay);
+  });
+  if (name === 'deal') Array.from({ length: 5 }, (_, index) => index * .055).forEach((delay, index) => {
+    noiseBurst(.045, .011, 1450 + index * 100, delay);
+    tone(230 + index * 18, .035, 'triangle', .007, delay);
+  });
+  if (name === 'turn') { tone(520, .065, 'sine', .018); tone(780, .1, 'triangle', .014, .055); }
+  if (name === 'join') { tone(349, .06, 'triangle', .016); tone(523, .1, 'sine', .018, .055); }
+  if (name === 'challenge') { tone(155, .15, 'sawtooth', .03); tone(82, .24, 'sawtooth', .024, .09); tone(620, .18, 'triangle', .012, .035); noiseBurst(.11, .016, 1900, .025); }
+  if (name === 'spin') { noiseBurst(.62, .014, 520); tone(64, .78, 'sawtooth', .013); Array.from({ length: 7 }, (_, index) => index * .075).forEach((delay) => noiseBurst(.018, .012, 2200, delay)); }
+  if (name === 'bang') { noiseBurst(.5, .12, 420); noiseBurst(.24, .07, 1200, .018); tone(42, .75, 'square', .09); tone(68, .45, 'sawtooth', .045, .025); }
+  if (name === 'empty') { noiseBurst(.035, .026, 2400); tone(210, .06, 'triangle', .025); noiseBurst(.025, .014, 1850, .075); tone(145, .05, 'sine', .014, .075); }
   if (name === 'ready') { tone(440, .07, 'sine', .025); tone(660, .09, 'sine', .018, .06); }
   if (name === 'paper') { noiseBurst(.13, .012, 1800); tone(190, .08, 'triangle', .01); }
-  if (name === 'notice') { noiseBurst(.09, .01, 1600); tone(330, .07, 'triangle', .014); }
+  if (name === 'notice') { noiseBurst(.1, .011, 1650); tone(330, .075, 'triangle', .015); tone(495, .09, 'sine', .009, .055); }
+  if (name === 'win') { tone(330, .13, 'sine', .02); tone(440, .18, 'sine', .018, .09); tone(660, .26, 'triangle', .016, .18); }
+  if (name === 'lose') { tone(155, .22, 'sawtooth', .018); tone(104, .32, 'triangle', .016, .13); }
 }
 
 function startAmbience() {
@@ -262,6 +276,22 @@ function dismissToast() {
   els.toast.classList.remove('show');
 }
 
+function hideEliminationImpact() {
+  clearTimeout(app.impactTimer);
+  app.impactTimer = null;
+  els.eliminationImpact.hidden = true;
+}
+
+function showEliminationImpact(name) {
+  hideEliminationImpact();
+  els.eliminationName.textContent = `${name} 已被淘汰`;
+  els.eliminationImpact.hidden = false;
+  void els.eliminationImpact.offsetWidth;
+  const duration = !app.preferences.motion || reducedMotion.matches
+    ? 700 : Math.min(3000, 1200 * 100 / app.preferences.motionSpeed);
+  app.impactTimer = setTimeout(hideEliminationImpact, duration);
+}
+
 function toast(message) {
   dismissToast();
   els.toast.textContent = message;
@@ -308,6 +338,7 @@ function syncPreferenceClasses() {
   root.style.setProperty('--duration-turn', `${1.8 * motionFactor}s`);
   root.style.setProperty('--duration-tutorial', `${2.8 * motionFactor}s`);
   root.style.setProperty('--duration-glint', `${4.8 * motionFactor}s`);
+  root.style.setProperty('--duration-impact', `${1.2 * motionFactor}s`);
   root.style.setProperty('--scene-brightness', app.preferences.sceneBrightness / 100);
   root.style.setProperty('--scene-contrast', app.preferences.sceneContrast / 100);
   root.style.setProperty('--particle-opacity', Math.min(.45, .28 * app.preferences.particleDensity / 100));
@@ -465,7 +496,7 @@ function render() {
   els.connectionHint.textContent = `${context} · ${describeGuest(app.profileData).title}`;
   renderOpponents(opponents, view);
   renderHand(me, view);
-  renderPile(view.pileCount);
+  renderPile(view.pileCount, view.lastPlay, view.round);
   renderHistory(view.history);
   renderControls(me, view);
 }
@@ -502,19 +533,34 @@ function renderHand(me, view) {
   app.animateDeal = false;
 }
 
-function renderPile(count) {
-  if (els.pile.dataset.count === String(count)) return;
+function renderPile(count, lastPlay, round) {
+  const previousCount = Number(els.pile.dataset.count || 0);
+  const sameRound = els.pile.dataset.round === String(round);
+  if (sameRound && previousCount === count) return;
   els.pile.dataset.count = count;
+  els.pile.dataset.round = round;
   if (!count) {
     els.pile.innerHTML = '<div class="empty-pile">等待出牌</div>';
+    els.pile.setAttribute('aria-label', '桌面牌堆，等待出牌');
     return;
   }
   const visibleCount = Math.min(count, 9);
-  els.pile.innerHTML = Array.from({ length: visibleCount }, (_, index) => {
+  const arriving = Math.min(visibleCount, sameRound ? Math.max(0, count - previousCount) : count);
+  const fromOpponent = lastPlay?.player && lastPlay.player !== app.youId;
+  if (arriving && fromOpponent) soundCue('opponentPlay', lastPlay.count);
+  const arrivalStart = Math.max(0, visibleCount - arriving);
+  const cards = Array.from({ length: visibleCount }, (_, index) => {
     const rotation = (index * 23 % 34) - 17;
     const offset = (index - (visibleCount - 1) / 2) * 5;
-    return `<i class="pile-card" style="transform:translateX(${offset}px) rotate(${rotation}deg)"></i>`;
+    const isArriving = index >= arrivalStart;
+    const origin = fromOpponent ? 'from-opponent' : 'from-you';
+    const arrivalDelay = isArriving ? (index - arrivalStart) * 65 : 0;
+    return `<i class="pile-card ${isArriving ? `arriving ${origin}` : ''}" aria-hidden="true" style="--arrival-delay:${arrivalDelay}ms;--x:${offset}px;--r:${rotation}deg"></i>`;
   }).join('');
+  const actor = lastPlay?.player ? playerName(lastPlay.player) : '上一位玩家';
+  const played = lastPlay?.count || arriving;
+  els.pile.innerHTML = `${cards}<span class="pile-play-badge" aria-hidden="true">${escapeHtml(actor)} · +${played} 张</span>`;
+  els.pile.setAttribute('aria-label', `${actor}暗扣打出 ${lastPlay?.count || arriving} 张牌，桌面共 ${count} 张`);
 }
 
 function renderHistory(history = []) {
@@ -554,10 +600,13 @@ function toggleCard(index, restoreFocus = false) {
 }
 
 function refreshLocal() {
+  const previousCurrent = app.view?.current;
+  const previousRound = app.view?.round;
   app.view = app.engine.viewFor(app.youId);
   syncProfileRound(app.view);
   app.busy = app.view.phase !== 'playing';
   render();
+  if (previousRound === app.view.round && previousCurrent && previousCurrent !== app.youId && app.view.current === app.youId && app.view.phase === 'playing') soundCue('turn');
   if (app.view.phase === 'ended') showEnd();
 }
 
@@ -578,6 +627,7 @@ function startSolo() {
   startAmbience();
   showGame();
   refreshLocal();
+  soundCue('deal');
   soundCue('ready');
   focusGameSoon(app.view.current === app.youId ? els.hand.querySelector('.card') : $('#menuBtn'));
   maybeRunAI();
@@ -629,7 +679,6 @@ function maybeRunAI() {
       return;
     }
     app.engine.play(currentId, chooseAI(app.engine, currentId));
-    soundCue('play');
     refreshLocal();
     maybeRunAI();
   }, scaledAIDelay(300));
@@ -647,6 +696,7 @@ async function showReveal(result, online) {
   syncGameInert();
   els.continue.hidden = true;
   els.onlineContinue.hidden = !online;
+  hideEliminationImpact();
   els.revealed.innerHTML = '';
   els.roulette.className = 'roulette';
   els.revealTitle.textContent = result.lied ? '谎言被揭穿' : '质疑失败';
@@ -670,11 +720,12 @@ async function showReveal(result, online) {
     els.roulette.classList.add('bang');
     els.rouletteText.textContent = `砰！${playerName(result.loser)} 被淘汰了。`;
     soundCue('bang');
+    showEliminationImpact(playerName(result.loser));
   } else {
     els.rouletteText.textContent = `咔哒……空膛。${playerName(result.loser)} 逃过一劫。`;
     soundCue('empty');
   }
-  await sleep(revealDelay(550, 30, online));
+  await sleep(revealDelay(result.bang ? 700 : 550, 30, online));
   if (sequence !== app.revealSequence || online) return;
   els.continue.hidden = false;
   focusSoon(els.continue);
@@ -696,6 +747,7 @@ function continueLocal() {
   if (app.mode !== 'solo' || app.engine.phase !== 'reveal') return;
   app.revealSequence += 1;
   els.reveal.hidden = true;
+  hideEliminationImpact();
   syncGameInert();
   app.engine.nextRound();
   app.selected.clear();
@@ -703,6 +755,7 @@ function continueLocal() {
   app.animateDeal = app.engine.phase === 'playing';
   refreshLocal();
   if (app.view.phase !== 'ended') {
+    soundCue('deal');
     soundCue('ready');
     maybeRunAI();
     focusGameSoon(app.view.current === app.youId ? els.hand.querySelector('.card') : $('#menuBtn'));
@@ -839,14 +892,17 @@ function handleOnlineMessage(message, socket) {
     return;
   }
   if (message.type === 'room') {
+    const previousPlayers = app.room?.players.length || 0;
     clearConnectionTimer();
     dismissToast();
     app.youId = message.youId;
     app.room = message.room;
+    if (previousPlayers && message.room.players.length > previousPlayers) soundCue('join');
     if (!message.room.started) showLobby();
     return;
   }
   if (message.type === 'game-state') {
+    const previousCurrent = app.view?.current;
     const roundStarted = message.state.phase === 'playing' && message.state.round !== app.view?.round;
     if (roundStarted) app.animateDeal = true;
     const startingMatch = !app.profileActive || (message.state.round === 1 && app.view?.phase === 'ended');
@@ -870,6 +926,7 @@ function handleOnlineMessage(message, socket) {
     if (message.state.phase === 'playing') {
       app.revealSequence += 1;
       els.reveal.hidden = true;
+      hideEliminationImpact();
       els.end.hidden = true;
       syncGameInert();
       app.busy = false;
@@ -880,8 +937,11 @@ function handleOnlineMessage(message, socket) {
     }
     render();
     if (roundStarted) {
+      soundCue('deal');
       soundCue('ready');
       focusGameSoon(message.state.current === app.youId ? els.hand.querySelector('.card') : $('#menuBtn'));
+    } else if (previousCurrent && previousCurrent !== app.youId && message.state.current === app.youId && message.state.phase === 'playing') {
+      soundCue('turn');
     }
     if (message.state.phase === 'ended') showEnd();
     return;
@@ -934,7 +994,10 @@ function showEnd() {
   els.endLeave.hidden = !online;
   els.end.hidden = false;
   syncGameInert();
-  if (opening) focusSoon(host || !online ? els.restart : els.endLeave);
+  if (opening) {
+    soundCue(won ? 'win' : 'lose');
+    focusSoon(host || !online ? els.restart : els.endLeave);
+  }
 }
 
 function restartGame() {
@@ -1093,6 +1156,7 @@ function returnHome(closeSocket = true) {
   app.revealSequence += 1;
   clearTimeout(app.aiTimer);
   clearConnectionTimer();
+  hideEliminationImpact();
   if (closeSocket && app.socket) {
     const socket = app.socket;
     app.socket = null;
