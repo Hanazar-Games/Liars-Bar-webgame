@@ -102,9 +102,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .pile-card.arriving { animation:card-arrive var(--duration-card) cubic-bezier(.16,.84,.2,1) var(--arrival-delay) both; }
 .pile-card.from-opponent { --arrival-y:-90px; }
 .pile-card.from-you { --arrival-y:90px; }
-.pile-play-badge { position:absolute; z-index:2; right:1px; bottom:0; padding:3px 7px; border:1px solid #9a6e3f; border-radius:10px; background:#100b08e8; color:#efcc94; font-size:8px; letter-spacing:1px; box-shadow:0 3px 10px #000; animation:pile-badge-in var(--duration-action) ease both; }
-.last-claim { min-height: 17px; margin-top: 3px; color: #887963; font-size: 9px; letter-spacing: 1px; transition: color .2s; }
-.last-claim.active { color: #e4c28f; }
+.pile-play-badge { position:absolute; z-index:2; right:-8px; bottom:1px; max-width:205px; display:flex; align-items:baseline; gap:6px; padding:4px 9px; border:1px solid #9a6e3f; border-radius:12px; background:#100b08f5; color:#efcc94; letter-spacing:1px; box-shadow:0 3px 10px #000; animation:pile-badge-in var(--duration-action) ease both; }
+.pile-play-actor { min-width:0; overflow:hidden; color:#c8ae88; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
+.pile-play-count { flex:none; color:#ffe0a6; font-size:15px; line-height:1; white-space:nowrap; text-shadow:0 0 9px #d9963b80; }
+.last-claim { min-height: 20px; margin-top: 5px; color: #887963; font-size: 11px; letter-spacing: 1px; transition: color .2s; }
+.last-claim.active { display:flex; align-items:baseline; justify-content:center; gap:6px; color:#c7ac87; }
+.last-claim.active > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.last-claim-count { flex:none; color:#f2c981; font-size:14px; white-space:nowrap; }
 .turn-banner { min-width: 150px; margin-top: 7px; padding: 6px 18px; text-align: center; border-radius: 2px; background: #100c09d6; border-left: 2px solid var(--gold); border-right: 2px solid var(--gold); color: #ead3b2; font-size: 12px; letter-spacing: 2px; text-shadow: 0 1px 3px #000; transition: .2s; }
 .turn-banner.your-turn { background: #3f2a12e6; box-shadow: 0 0 18px #d99a3b38; color: #fff1cc; }
 
@@ -137,6 +141,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .action-btn { height: 54px; min-width: 178px; display: flex; align-items: center; justify-content: center; gap: 12px; border: 1px solid; border-radius: 3px; color: var(--ink); cursor: pointer; transition: .18s; box-shadow: 0 5px 15px #0007; }
 .action-btn b { display: block; font-size: 14px; letter-spacing: 2px; }
 .action-btn small { display: block; max-width: 145px; margin-top: 3px; overflow: hidden; color: #d3c0a4; font-size: 9px; letter-spacing: 1px; text-overflow: ellipsis; white-space: nowrap; }
+#challengeText { display:flex; align-items:baseline; gap:4px; }
+.challenge-player { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.challenge-card-count { flex:none; color:#ffd299; font-size:12px; font-style:normal; font-weight:700; }
 .action-btn em { font-style: normal; color: #ffd795; }
 .action-btn .action-icon { width: 30px; height: 30px; display: grid; place-items: center; color: #d8b47a; }
 .action-btn .action-icon .ui-icon { width: 24px; height: 24px; }
@@ -455,6 +462,10 @@ input[type="range"]:disabled { opacity:.35; cursor:not-allowed; }
   .avatar-ring { width: 40px; height: 40px; margin-bottom: 3px; }
   .avatar { font-size: 18px; }
   .center-table { top: 46%; transform: translate(-50%,-50%) scale(.45); }
+  .pile-play-actor { font-size:14px; }
+  .pile-play-count { font-size:20px; }
+  .last-claim { font-size:14px; }
+  .last-claim-count { font-size:18px; }
   .player-area { bottom: 2px; width: min(760px,95%); display: grid; grid-template-columns: minmax(0,1fr) 330px; grid-template-rows: 14px 76px 17px; column-gap: 14px; }
   .you-row { grid-column: 1; grid-row: 1; width: 100%; }
   .hand { grid-column: 1; grid-row: 2; height: 76px; padding: 0 12px; }

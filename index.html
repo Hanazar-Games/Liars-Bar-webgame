@@ -116,7 +116,7 @@
       <p class="tip">只有 JOKER 是万能牌，可充当任意指定牌 · 活到最后即获胜</p>
       <button id="tutorialBtn" class="version-btn tutorial-entry" type="button" aria-haspopup="dialog" data-i18n="openTutorial">开始新手教程</button>
       <button id="startSettingsBtn" class="version-btn" type="button" aria-haspopup="dialog" data-i18n="settingsTitle">游戏设置</button>
-      <button id="announcementBtn" class="version-btn" type="button" aria-haspopup="dialog">v1.7.0 · 查看本次更新</button>
+      <button id="announcementBtn" class="version-btn" type="button" aria-haspopup="dialog">v1.7.1 · 查看本次更新</button>
     </div>
   </section>
 
@@ -250,7 +250,7 @@
           </section>
           <section id="settings-news" class="settings-panel" role="tabpanel" data-settings-panel="news" hidden>
             <h3 data-i18n="news">最新公告</h3>
-            <article class="settings-release"><small>2026-07-30</small><b>v1.7.0 · 安全离席</b><p>新增游戏内安全退出、退出防误触和淘汰收尾 SFX，并复查暗牌展示与多尺寸交互。</p></article>
+            <article class="settings-release"><small>2026-07-30</small><b>v1.7.1 · 看清牌数</b><p>放大对手出牌张数、上一手宣称与质疑信息，并修复长昵称挤压和提示重叠。</p></article>
             <button id="settingsAnnouncementBtn" class="setting-action" type="button"><span><b>查看完整更新公告</b><small>阅读本次更新与历史版本</small></span><i>→</i></button>
           </section>
           <section id="settings-about" class="settings-panel" role="tabpanel" data-settings-panel="about" hidden>
@@ -314,17 +314,18 @@
     <div class="panel-card announcement-card">
       <button id="closeAnnouncementBtn" class="close-btn" type="button" aria-label="关闭更新公告"><svg class="ui-icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
       <p class="eyebrow">更新公告</p>
-      <h2 id="announcementTitle">v1.7.0 · 安全离席</h2>
+      <h2 id="announcementTitle">v1.7.1 · 看清牌数</h2>
       <p class="release-date">2026-07-30</p>
       <ul>
-        <li>游戏规则菜单新增安全退出牌局，二次确认可避免触屏误操作。</li>
-        <li>单机退出会停止 AI 与异步裁决，联机退出会主动离房并关闭连接。</li>
-        <li>复查对手暗牌落桌：只显示牌背、出牌者与张数，质疑前绝不泄露牌面。</li>
-        <li>击发淘汰加入低频收尾层，并补充退出预警与离席反馈 SFX。</li>
-        <li>深度复查游戏规则、UI/UX、动画、BGM/SFX、键盘焦点与多尺寸布局。</li>
+        <li>显著放大对手本次出牌张数，让关键牌局信息一眼可见。</li>
+        <li>同步强调上一手宣称和质疑按钮中的张数。</li>
+        <li>拆分玩家名与张数布局，长昵称不再挤掉最重要的数量信息。</li>
+        <li>为短横屏补偿中央牌桌缩放后的文字尺寸。</li>
+        <li>修复落桌徽标与上一手提示轻微重叠，并复查多尺寸布局与联机状态。</li>
       </ul>
       <details>
         <summary>历史公告</summary>
+        <article><b>v1.7.0 · 安全离席</b><time>2026-07-30</time><p>新增游戏内安全退出、退出防误触和淘汰收尾 SFX，并复查暗牌展示与多尺寸交互。</p></article>
         <article><b>v1.6.0 · 暗牌惊雷</b><time>2026-07-29</time><p>新增暗牌落桌、淘汰冲击动画和更丰富的牌局 SFX，并修复极窄屏大手牌遮挡。</p></article>
         <article><b>v1.5.2 · 稳住视野</b><time>2026-07-29</time><p>修复短屏焦点、极窄屏重叠与联机提示残留，补充音效试听和历史公告。</p></article>
         <article><b>v1.5.1 · 万能牌明示</b><time>2026-07-28</time><p>明确 JOKER 万能牌规则，修复动画节奏、BGM 预览、场景滤镜、多语言与极窄屏体验。</p></article>

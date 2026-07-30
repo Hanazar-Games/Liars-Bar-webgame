@@ -565,7 +565,7 @@ function renderPile(count, lastPlay, round) {
   }).join('');
   const actor = lastPlay?.player ? playerName(lastPlay.player) : '上一位玩家';
   const played = lastPlay?.count || arriving;
-  els.pile.innerHTML = `${cards}<span class="pile-play-badge" aria-hidden="true">${escapeHtml(actor)} · +${played} 张</span>`;
+  els.pile.innerHTML = `${cards}<span class="pile-play-badge" aria-hidden="true"><span class="pile-play-actor">${escapeHtml(actor)}</span><b class="pile-play-count">+${played} 张</b></span>`;
   els.pile.setAttribute('aria-label', `${actor}暗扣打出 ${lastPlay?.count || arriving} 张牌，桌面共 ${count} 张`);
 }
 
@@ -579,9 +579,20 @@ function renderControls(me, view) {
   const previous = view.lastPlay ? view.players.find((player) => player.id === view.lastPlay.player) : null;
   els.selectedCount.textContent = app.selected.size;
   const claimMessage = previous ? `${previous.name} 宣称打出 ${view.lastPlay.count} 张 ${view.target}` : '尚无出牌';
-  if (els.lastClaim.textContent !== claimMessage) els.lastClaim.textContent = claimMessage;
+  if (els.lastClaim.getAttribute('aria-label') !== claimMessage) {
+    if (previous) {
+      els.lastClaim.innerHTML = `<span>${escapeHtml(previous.name)} 宣称</span><b class="last-claim-count">${view.lastPlay.count} 张 ${escapeHtml(view.target)}</b>`;
+    } else {
+      els.lastClaim.textContent = claimMessage;
+    }
+    els.lastClaim.setAttribute('aria-label', claimMessage);
+  }
   els.lastClaim.classList.toggle('active', Boolean(previous));
-  els.challengeText.textContent = previous ? `揭穿 ${previous.name} 的 ${view.lastPlay.count} 张牌` : '尚无可质疑出牌';
+  if (previous) {
+    els.challengeText.innerHTML = `<span class="challenge-player">揭穿 ${escapeHtml(previous.name)} 的</span><em class="challenge-card-count">${view.lastPlay.count} 张牌</em>`;
+  } else {
+    els.challengeText.textContent = '尚无可质疑出牌';
+  }
   els.selectionHint.textContent = app.selected.size
     ? `已选择 ${app.selected.size} 张 · 将宣称为 ${view.target}`
     : myTurn ? !me.handCount && view.lastPlay ? '手牌已出尽，只能质疑上一手' : view.lastPlay ? '继续出牌，或质疑上一手' : '选择 1–3 张牌' : me?.alive ? '等待轮到你' : '你已被淘汰，正在旁观';

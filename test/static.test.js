@@ -104,6 +104,10 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(script, /function renderPile\(count, lastPlay, round\)/);
   assert.match(script, /from-opponent/);
   assert.match(script, /pile-play-badge/);
+  assert.match(script, /pile-play-count/);
+  assert.match(script, /last-claim-count/);
+  assert.match(script, /challenge-card-count/);
+  assert.match(script, /if \(els\.lastClaim\.getAttribute\('aria-label'\) !== claimMessage\)/);
   assert.match(script, /暗扣打出 \$\{lastPlay\?\.count \|\| arriving\} 张牌/);
   assert.match(script, /soundCue\('join'\)/);
   assert.match(html, /id="eliminationImpact"[^>]+aria-live="assertive"/);
@@ -134,13 +138,13 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(script, /你已被淘汰，正在旁观/);
   assert.match(script, /if \(roundStarted\) \{[\s\S]*focusSoon/);
   assert.match(script, /focus\(\{\s*preventScroll:\s*true\s*\}\)/);
-  assert.match(html, /v1\.7\.0/);
-  assert.match(html, /id="announcementTitle">v1\.7\.0[\s\S]*?class="release-date">2026-07-30/);
+  assert.match(html, /v1\.7\.1/);
+  assert.match(html, /id="announcementTitle">v1\.7\.1[\s\S]*?class="release-date">2026-07-30/);
   const { version } = JSON.parse(manifest);
-  assert.equal(version, '1.7.0');
+  assert.equal(version, '1.7.1');
   assert.match(server, new RegExp(`v${version.replaceAll('.', '\\.')}`));
   assert.match(server, /\['\/src\/guest-profile\.js', \['src\/guest-profile\.js', 'text\/javascript; charset=utf-8'\]\]/);
-  const releases = ['1.7.0', '1.6.0', '1.5.2', '1.5.1', '1.5.0', '1.4.0', '1.3.1', '1.3.0', '1.2.4', '1.2.3', '1.2.2', '1.2.1', '1.2.0', '1.1.1', '1.1.0', '1.0.1', '1.0.0'];
+  const releases = ['1.7.1', '1.7.0', '1.6.0', '1.5.2', '1.5.1', '1.5.0', '1.4.0', '1.3.1', '1.3.0', '1.2.4', '1.2.3', '1.2.2', '1.2.1', '1.2.0', '1.1.1', '1.1.0', '1.0.1', '1.0.0'];
   [html, changelog].forEach((document) => {
     let previous = -1;
     releases.forEach((release) => {
@@ -160,6 +164,11 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(styles, /input::placeholder\s*\{[^}]*color:\s*#857766/);
   assert.match(styles, /@keyframes card-deal/);
   assert.match(styles, /@keyframes card-arrive/);
+  assert.match(styles, /\.pile-play-count\s*\{[^}]*font-size:\s*15px/);
+  assert.match(styles, /\.last-claim-count\s*\{[^}]*font-size:\s*14px/);
+  assert.match(styles, /\.challenge-card-count\s*\{[^}]*font-size:\s*12px/);
+  assert.match(styles, /\.pile-play-badge\s*\{[^}]*bottom:\s*1px/);
+  assert.match(styles, /max-height:\s*620px[^}]*orientation:\s*landscape[\s\S]*\.pile-play-count\s*\{[^}]*font-size:\s*20px/);
   assert.match(styles, /@keyframes elimination-impact/);
   assert.match(styles, /@keyframes impact-shock/);
   assert.match(styles, /\.calm-motion \.elimination-impact\s*\{[^}]*opacity:\s*1/);
