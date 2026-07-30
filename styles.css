@@ -143,7 +143,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .action-btn.challenge { background: linear-gradient(#401916,#180c0a); border-color: #a44238; }
 .action-btn.play { background: linear-gradient(#7d5727,#38240f); border-color: #d3a561; }
 .action-btn:not(:disabled):hover { transform: translateY(-2px); filter: brightness(1.25); }
-.action-btn:not(:disabled):active, .mode-card:active, .primary-btn:not(:disabled):active, .secondary-btn:active { transform: translateY(1px) scale(.99); }
+.action-btn:not(:disabled):active, .mode-card:active, .primary-btn:not(:disabled):active, .secondary-btn:active, .danger-btn:active { transform: translateY(1px) scale(.99); }
 .action-btn:disabled { opacity: .38; cursor: not-allowed; filter: grayscale(.45); }
 
 .overlay { position: fixed; z-index: 50; inset: 0; padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); display: grid; place-items: center; overflow: auto; overscroll-behavior: contain; background: rgba(2,1,1,.84); backdrop-filter: blur(7px); }
@@ -194,6 +194,9 @@ input:disabled { opacity: .62; cursor: not-allowed; }
 .primary-btn:hover, .secondary-btn:hover { filter: brightness(1.22); transform: translateY(-2px); }
 .primary-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 .primary-btn.compact, .secondary-btn.compact { min-width: 135px; height: 44px; font-weight: 700; letter-spacing: 2px; }
+.danger-btn { min-width:135px; height:44px; border:1px solid #91483f; border-radius:2px; background:#1b0908; color:#e8aaa0; font-weight:700; letter-spacing:2px; cursor:pointer; transition:.2s; }
+.danger-btn:hover { border-color:#d16b5d; background:#35100d; color:#ffe0d9; transform:translateY(-2px); }
+.danger-btn[data-confirming="true"] { border-color:#e05949; background:linear-gradient(180deg,#7b241c,#320b08); color:#fff3ed; box-shadow:0 0 24px #bf261e52,inset 0 0 0 2px #210705; }
 .panel-actions { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
 .close-btn { position: absolute; z-index: 2; right: 14px; top: 10px; width: 42px; height: 42px; display: grid; place-items: center; padding: 0; color: #c0a17e; background: none; border: 0; cursor: pointer; transition: .2s; }
 .close-btn:hover { color: #fff0d0; transform: rotate(8deg); }
@@ -346,7 +349,10 @@ input[type="range"]:disabled { opacity:.35; cursor:not-allowed; }
 .menu-card li { display: grid; grid-template-columns: 60px 1fr; gap: 13px; padding: 11px 0; border-top: 1px solid #60482d75; }
 .menu-card li b { color: var(--gold); }
 .menu-card li span { color: #c2af96; font-size: 13px; line-height: 1.65; }
-.menu-card .primary-btn, .announcement-card .primary-btn { display: block; margin: 22px auto 0; }
+.menu-card .primary-btn, .announcement-card .primary-btn { display: block; }
+.announcement-card .primary-btn { margin:22px auto 0; }
+.menu-actions { display:flex; justify-content:center; gap:10px; margin-top:22px; }
+.exit-game-hint { min-height:18px; margin:9px 0 -10px; color:#d99d91; font-size:10px; line-height:1.5; text-align:center; }
 .announcement-card { text-align: left; max-height: min(680px,90vh); overflow: auto; }
 .announcement-card h2 { margin-bottom: 2px; }
 .release-date { margin-top: 0; color: #9d8a72; font-size: 10px; }
@@ -413,6 +419,8 @@ input[type="range"]:disabled { opacity:.35; cursor:not-allowed; }
   .lobby-players { grid-template-columns: 1fr; }
   .menu-card { padding: 34px 24px; }
   .menu-card li { grid-template-columns: 48px 1fr; }
+  .menu-actions { flex-direction:column; align-items:stretch; }
+  .menu-actions > button { width:100%; }
   .start-content h1 { letter-spacing: -3px; }
   .settings-card { padding:24px 16px 18px; }
   .settings-heading { padding-left:4px; }
@@ -539,7 +547,7 @@ input[type="range"]:disabled { opacity:.35; cursor:not-allowed; }
 }
 
 @media (hover: none) {
-  .icon-btn:hover, .mode-card:hover, .primary-btn:hover, .secondary-btn:hover, .action-btn:not(:disabled):hover { transform: none; filter: none; }
+  .icon-btn:hover, .mode-card:hover, .primary-btn:hover, .secondary-btn:hover, .danger-btn:hover, .action-btn:not(:disabled):hover { transform: none; filter: none; }
   .card:hover { transform: rotate(var(--rot)); box-shadow: 0 7px 12px #0009, inset 0 0 12px #fff7; }
   .card.selected:hover { transform: translateY(-25px) rotate(var(--rot)); box-shadow: 0 0 0 3px #c3332a, 0 17px 22px #000d; }
 }

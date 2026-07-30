@@ -70,6 +70,15 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(html, /https:\/\/github\.com\/hzagaming/);
   assert.match(html, /https:\/\/hanazargames\.com/);
   assert.match(html, /id="menuBtn"[^>]+aria-haspopup="dialog"/);
+  assert.match(html, /id="exitGameBtn"[^>]+data-confirm-label="确认退出牌局"/);
+  assert.match(html, /id="exitGameHint"[^>]+aria-live="polite"/);
+  assert.match(script, /function requestGameExit\(\)/);
+  assert.match(script, /app\.exitConfirmTimer = setTimeout\(resetGameExit, 3000\)/);
+  assert.match(script, /returnHome\(app\.mode === 'online'\)/);
+  assert.match(script, /function closeMenu\(resume = true\)/);
+  assert.match(styles, /\.danger-btn/);
+  assert.match(styles, /\.menu-actions/);
+  assert.match(styles, /\.announcement-card \.primary-btn\s*\{[^}]*margin:\s*22px auto 0/);
   assert.match(html, /id="profileOverlay"[^>]+aria-labelledby="profileHeading"/);
   assert.match(html, /id="profileGuile"[^>]+role="meter"/);
   assert.doesNotMatch(html, /id="menuBtn"[^>]*>☰<\/button>/);
@@ -95,10 +104,12 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(script, /function renderPile\(count, lastPlay, round\)/);
   assert.match(script, /from-opponent/);
   assert.match(script, /pile-play-badge/);
+  assert.match(script, /暗扣打出 \$\{lastPlay\?\.count \|\| arriving\} 张牌/);
   assert.match(script, /soundCue\('join'\)/);
   assert.match(html, /id="eliminationImpact"[^>]+aria-live="assertive"/);
   assert.match(html, /id="eliminationName"/);
   assert.match(script, /els\.eliminationImpact\.hidden = false/);
+  assert.match(script, /soundCue\('eliminated'\)/);
   assert.match(script, /els\.sfxVolume\.addEventListener\('change',[\s\S]*soundCue\('select'\)/);
   assert.match(script, /els\.announcementSoundsEnabled\.addEventListener\('change',[\s\S]*soundCue\('notice'\)/);
   assert.match(script, /手牌已出尽，只能质疑上一手/);
@@ -123,13 +134,13 @@ test('keeps HTML identifiers, labels and client selectors consistent', async () 
   assert.match(script, /你已被淘汰，正在旁观/);
   assert.match(script, /if \(roundStarted\) \{[\s\S]*focusSoon/);
   assert.match(script, /focus\(\{\s*preventScroll:\s*true\s*\}\)/);
-  assert.match(html, /v1\.6\.0/);
-  assert.match(html, /id="announcementTitle">v1\.6\.0[\s\S]*?class="release-date">2026-07-29/);
+  assert.match(html, /v1\.7\.0/);
+  assert.match(html, /id="announcementTitle">v1\.7\.0[\s\S]*?class="release-date">2026-07-30/);
   const { version } = JSON.parse(manifest);
-  assert.equal(version, '1.6.0');
+  assert.equal(version, '1.7.0');
   assert.match(server, new RegExp(`v${version.replaceAll('.', '\\.')}`));
   assert.match(server, /\['\/src\/guest-profile\.js', \['src\/guest-profile\.js', 'text\/javascript; charset=utf-8'\]\]/);
-  const releases = ['1.6.0', '1.5.2', '1.5.1', '1.5.0', '1.4.0', '1.3.1', '1.3.0', '1.2.4', '1.2.3', '1.2.2', '1.2.1', '1.2.0', '1.1.1', '1.1.0', '1.0.1', '1.0.0'];
+  const releases = ['1.7.0', '1.6.0', '1.5.2', '1.5.1', '1.5.0', '1.4.0', '1.3.1', '1.3.0', '1.2.4', '1.2.3', '1.2.2', '1.2.1', '1.2.0', '1.1.1', '1.1.0', '1.0.1', '1.0.0'];
   [html, changelog].forEach((document) => {
     let previous = -1;
     releases.forEach((release) => {

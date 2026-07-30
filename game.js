@@ -44,6 +44,7 @@ const els = {
   tutorialProgress: $('#tutorialProgress'), tutorialVisual: $('#tutorialVisual'), tutorialDots: $('#tutorialDots'),
   tutorialBack: $('#tutorialBackBtn'), tutorialNext: $('#tutorialNextBtn'), language: $('#languageSelect'),
   eliminationImpact: $('#eliminationImpact'), eliminationName: $('#eliminationName'),
+  exitGame: $('#exitGameBtn'), exitGameHint: $('#exitGameHint'),
   soundEnabled: $('#soundEnabled'), masterVolume: $('#masterVolume'), musicEnabled: $('#musicEnabled'),
   musicVolume: $('#musicVolume'), sfxEnabled: $('#sfxEnabled'), sfxVolume: $('#sfxVolume'),
   motionEnabled: $('#motionEnabled'), visualEffectsEnabled: $('#visualEffectsEnabled'),
@@ -72,6 +73,7 @@ const app = {
   toastTimer: null,
   connectionTimer: null,
   impactTimer: null,
+  exitConfirmTimer: null,
   connecting: false,
   lastFocus: null,
   settingsFocus: null,
@@ -169,8 +171,8 @@ function noiseBurst(duration = .06, volume = .02, frequency = 1200, delay = 0) {
 }
 
 function soundCue(name, detail = 1) {
-  if (['select', 'paper'].includes(name) && !app.preferences.uiSounds) return;
-  if (['play', 'opponentPlay', 'deal', 'turn', 'join', 'challenge', 'spin', 'bang', 'empty', 'ready', 'win', 'lose'].includes(name) && !app.preferences.gameSounds) return;
+  if (['select', 'paper', 'warning', 'exit'].includes(name) && !app.preferences.uiSounds) return;
+  if (['play', 'opponentPlay', 'deal', 'turn', 'join', 'challenge', 'spin', 'bang', 'eliminated', 'empty', 'ready', 'win', 'lose'].includes(name) && !app.preferences.gameSounds) return;
   if (name === 'notice' && !app.preferences.announcementSounds) return;
   if (name === 'select') tone(420, .045, 'triangle', .022);
   if (name === 'play') { noiseBurst(.07, .028, 850); tone(115, .09, 'triangle', .02); }
@@ -187,10 +189,13 @@ function soundCue(name, detail = 1) {
   if (name === 'challenge') { tone(155, .15, 'sawtooth', .03); tone(82, .24, 'sawtooth', .024, .09); tone(620, .18, 'triangle', .012, .035); noiseBurst(.11, .016, 1900, .025); }
   if (name === 'spin') { noiseBurst(.62, .014, 520); tone(64, .78, 'sawtooth', .013); Array.from({ length: 7 }, (_, index) => index * .075).forEach((delay) => noiseBurst(.018, .012, 2200, delay)); }
   if (name === 'bang') { noiseBurst(.5, .12, 420); noiseBurst(.24, .07, 1200, .018); tone(42, .75, 'square', .09); tone(68, .45, 'sawtooth', .045, .025); }
+  if (name === 'eliminated') { tone(196, .18, 'sawtooth', .025, .08); tone(131, .34, 'triangle', .026, .2); tone(65, .65, 'sine', .038, .32); }
   if (name === 'empty') { noiseBurst(.035, .026, 2400); tone(210, .06, 'triangle', .025); noiseBurst(.025, .014, 1850, .075); tone(145, .05, 'sine', .014, .075); }
   if (name === 'ready') { tone(440, .07, 'sine', .025); tone(660, .09, 'sine', .018, .06); }
   if (name === 'paper') { noiseBurst(.13, .012, 1800); tone(190, .08, 'triangle', .01); }
   if (name === 'notice') { noiseBurst(.1, .011, 1650); tone(330, .075, 'triangle', .015); tone(495, .09, 'sine', .009, .055); }
+  if (name === 'warning') { tone(240, .08, 'square', .018); tone(180, .12, 'sawtooth', .016, .09); }
+  if (name === 'exit') { noiseBurst(.12, .018, 700); tone(165, .16, 'triangle', .02); tone(98, .28, 'sine', .018, .12); }
   if (name === 'win') { tone(330, .13, 'sine', .02); tone(440, .18, 'sine', .018, .09); tone(660, .26, 'triangle', .016, .18); }
   if (name === 'lose') { tone(155, .22, 'sawtooth', .018); tone(104, .32, 'triangle', .016, .13); }
 }
@@ -286,6 +291,7 @@ function showEliminationImpact(name) {
   hideEliminationImpact();
   els.eliminationName.textContent = `${name} 已被淘汰`;
   els.eliminationImpact.hidden = false;
+  soundCue('eliminated');
   void els.eliminationImpact.offsetWidth;
   const duration = !app.preferences.motion || reducedMotion.matches
     ? 700 : Math.min(3000, 1200 * 100 / app.preferences.motionSpeed);
@@ -1011,21 +1017,50 @@ function restartGame() {
 }
 
 function openMenu() {
+  resetGameExit();
   app.lastFocus = document.activeElement;
   app.paused = app.mode === 'solo';
   clearTimeout(app.aiTimer);
   if (app.mode === 'online') toast('联机牌局不会暂停');
   els.menu.hidden = false;
   syncGameInert();
+  soundCue('paper');
   focusSoon($('#closeMenuBtn'));
 }
 
-function closeMenu() {
+function resetGameExit() {
+  clearTimeout(app.exitConfirmTimer);
+  app.exitConfirmTimer = null;
+  els.exitGame.dataset.confirming = 'false';
+  els.exitGame.textContent = els.exitGame.dataset.defaultLabel;
+  els.exitGameHint.textContent = '';
+}
+
+function requestGameExit() {
+  if (els.exitGame.dataset.confirming === 'true') {
+    soundCue('exit');
+    closeMenu(false);
+    returnHome(app.mode === 'online');
+    return;
+  }
+  resetGameExit();
+  els.exitGame.dataset.confirming = 'true';
+  els.exitGame.textContent = els.exitGame.dataset.confirmLabel;
+  els.exitGameHint.textContent = '再次点击将在 3 秒内退出，当前牌局进度不会保留。';
+  soundCue('warning');
+  app.exitConfirmTimer = setTimeout(resetGameExit, 3000);
+}
+
+function closeMenu(resume = true) {
+  resetGameExit();
   els.menu.hidden = true;
   syncGameInert();
   app.paused = false;
-  focusSoon(app.lastFocus);
-  maybeRunAI();
+  if (resume) {
+    soundCue('select');
+    focusSoon(app.lastFocus);
+    maybeRunAI();
+  }
 }
 
 function openProfile() {
@@ -1157,6 +1192,7 @@ function returnHome(closeSocket = true) {
   clearTimeout(app.aiTimer);
   clearConnectionTimer();
   hideEliminationImpact();
+  resetGameExit();
   if (closeSocket && app.socket) {
     const socket = app.socket;
     app.socket = null;
@@ -1236,6 +1272,7 @@ els.restart.addEventListener('click', restartGame);
 $('#menuBtn').addEventListener('click', openMenu);
 $('#closeMenuBtn').addEventListener('click', closeMenu);
 $('#resumeBtn').addEventListener('click', closeMenu);
+els.exitGame.addEventListener('click', requestGameExit);
 els.profileButton.addEventListener('click', openProfile);
 $('#closeProfileBtn').addEventListener('click', closeProfile);
 $('#profileDoneBtn').addEventListener('click', closeProfile);
